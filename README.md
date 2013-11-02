@@ -337,7 +337,7 @@ The difference between arrow `->` and fat arrow `=>` is `->` will use dynamic `t
 
 These arrows are similar to both CoffeScript and ES6 arrows, but a key difference is in Proto block bodies are not permitted for arrow lambdas.  Proto's regular function expressions are succinct enough not to need it, and in the future we may be able to do some pretty cool stuff with blocks and arrow lambdas (like [first class block lambdas](http://wiki.ecmascript.org/doku.php?id=strawman:block_lambda_revival).
 
-#### Labels
+### Labels
 
 Labels don't need their own colon.  The one that precedes a block is all that's needed.
 
@@ -349,6 +349,6 @@ Labels don't need their own colon.  The one that precedes a block is all that's 
     }
     assert(a === 1);
 
-#### Parentheses Required in `new` Expression
+### Parentheses Required in `new` Expression
 
 The form `new Foo;` is not permitted in Proto. Parentheses are required: `new Foo();`.
