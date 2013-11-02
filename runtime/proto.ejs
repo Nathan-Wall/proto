@@ -1,0 +1,312 @@
+var proto = (function() {
+
+	var Object = global.Object,
+		Number = global.Number,
+		String = global.String,
+		Error = global.Error,
+		TypeError = global.TypeError,
+
+		lazyBind = Function.prototype.bind.bind(Function.prototype.call),
+
+		create = Object.create,
+		getPrototypeOf = Object.getPrototypeOf,
+		keys = Object.keys,
+		defineProperty = Object.defineProperty,
+		getOwnPropertyNames = Object.getOwnPropertyNames,
+		getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor,
+
+		hasOwn = lazyBind(Object.prototype.hasOwnProperty),
+		apply = lazyBind(Function.prototype.apply),
+		join = lazyBind(Array.prototype.join),
+		push = lazyBind(Array.prototype.push),
+
+		NIL = create(null),
+
+		Origin = create(null);
+
+	function ToNumber(value) {
+		if (value === undefined)
+			return 0;
+		return Number(value);
+	}
+
+	function ToString(value) {
+		if (value === null || value === undefined)
+			return '';
+		return String(value);
+	}
+
+	function ToType(value) {
+		if (value === null || value === undefined)
+			return 'nil';
+		var type = typeof value;
+		if (type == 'function')
+			return 'object';
+		return type;
+	}
+
+	function NilCoerce(value) {
+		return value === null || value === undefined ? NIL : value;
+	}
+
+	function NilSetThrow(value) {
+		var error;
+		if (value === null || value === undefined) {
+			throw new TypeError('Cannot set property of nil');
+		}
+		return value;
+	}
+
+	function CreateObject(proto, properties) {
+		var descriptors, key, desc;
+		if (proto === undefined)
+			proto = Origin;
+		return simile.like(proto, properties);
+	}
+
+	function CreateArray(proto, elements) {
+		var array = create(proto),
+			desc = create(null);
+		for (var i = 0; i < elements.length; i++)
+			array[i] = elements[i];
+		desc.value = elements.length;
+		desc.enumerable = false;
+		desc.writable = true;
+		desc.configurable = true;
+		defineProperty(array, 'length', desc);
+		return array;
+	}
+
+	function Bind(f, receiver) {
+		var F = GetFunction(f),
+			bound = arguments.length == 1 ? lazyBind(F) : lazyBind(F, receiver);
+		return createWrapper(F, (f.length >>> 0) + 1, bound);
+	}
+
+	function Own(obj) {
+		if (Object(obj) !== obj)
+			throw new TypeError('Object expected');
+		var O = create(null),
+			keys = getOwnPropertyNames(obj);
+		for (var i = 0, key; i < keys.length; i++) {
+			key = keys[i];
+			define(O, key, getOwnPropertyDescriptor(obj, key));
+		}
+		return O;
+	}
+
+	function GetOwn(obj, key) {
+		if (hasOwn(obj, key))
+			return obj[key];
+		return undefined;
+	}
+
+	function SetOwn(obj, key, value) {
+		if (hasOwn(obj, key))
+			return obj[key] = value;
+		define(obj, key, {
+			value: value,
+			// Leaving enumerable on here to keep foo#bar = 5 consistent with
+			// foo.bar = 5.
+			enumerable: true,
+			writable: true,
+			configurable: true
+		});
+		return value;
+	}
+
+	function Call(f, receiver, args) {
+		return apply(GetFunction(f), receiver, args);
+	}
+
+	function GetFunction(f) {
+		var F = f,
+			checked = false;
+		do {
+			if (typeof F == 'function')
+				return F;
+			if (!checked && Object(f) !== f)
+				throw new TypeError('Function expected');
+			checked = true;
+		} while (F = getPrototypeOf(F));
+		throw new TypeError('Function expected');
+	}
+
+	function CallMethod(obj, prop, args) {
+		if (Object(obj) !== obj)
+			throw new TypeError('Object expected');
+		var f = obj[prop];
+		return Call(f, obj, args);
+	}
+
+	function CallOwnMethod(obj, prop, args) {
+		if (Object(obj) !== obj)
+			throw new TypeError('Object expected');
+		var P = String(prop);
+		if (!hasOwn(obj, P))
+			throw new TypeError('Object has no method "' + P + '"');
+		return CallMethod(obj, P, args);
+	}
+
+	function define(obj, name, desc) {
+		if ('value' in desc && !hasOwn(desc, 'value')
+			|| 'get' in desc && !hasOwn(desc, 'get')
+			|| 'set' in desc && !hasOwn(desc, 'set')
+			|| 'enumerable' in desc && !hasOwn(desc, 'enumerable')
+			|| 'writable' in desc && !hasOwn(desc, 'writable')
+			|| 'configurable' in desc && !hasOwn(desc, 'configurable'))
+			desc = createSafeDescriptor(desc);
+		return defineProperty(obj, name, desc);
+	}
+
+	function createSafeDescriptor(obj) {
+		if (obj == null) {
+			locked = true;
+			throw new TypeError('Argument cannot be null or undefined.');
+		}
+		obj = Object(obj);
+		var O = create(null),
+			k = keys(obj);
+		for (var i = 0, key = k[i]; key = k[i], i < k.length; i++)
+			O[key] = obj[key];
+		return O;
+	}
+
+	// Creates a wrapper function with the same length as the original.
+	// Arity is preserved (`length`) but the function's `name` is lost. It is
+	// possible to preserve the name, but it requires use of `eval` on each
+	// wrapping.  This implementation only requires `eval` for creating the
+	// generator, and should be much more performant than one that would
+	// preserve the name.  Preserving `length` is considered more important
+	// than preserving `name` because `length` is known to be used by higher-
+	// order functions (i.e. in mocha).  Nothing utilizing `name` for purposes
+	// other than debugging is known.
+	var createWrapper = (function() {
+
+		// Let's memoize wrapper generators to avoid using eval too often.
+		var generators = create(null),
+
+			numGenerators = 0,
+
+			// Let's limit length to 512 for now. If someone wants to up it,
+			// they can.
+			MAX_WRAPPER_LENGTH = 512,
+
+			// Limit the number of generators which are cached to preserve
+			// memory in the unusual case that someone creates many generators.
+			// We don't go to lengths to make the cache drop old, unused values
+			// as there really shouldn't be a need for so many generators in the
+			// first place.
+			MAX_CACHED_GENERATORS = 64,
+
+
+		 	// We want to use indirect eval so that implementations can take
+		 	// advantage of memory & performance enhancements which are possible
+		 	// without direct eval.
+			_eval = eval;
+
+		return function createWrapper(/* original, length, f */$0, $1) {
+
+			var original = arguments[0];
+
+			if (typeof original != 'function')
+				throw new TypeError('Function expected: ' + original);
+
+			var length, f;
+
+			if (typeof arguments[2] != 'undefined')
+				length = arguments[1];
+			else
+				length = original.length;
+
+			if (typeof arguments[2] != 'undefined')
+				f = arguments[2];
+			else
+				f = arguments[1];
+
+			if (length < 0)
+				length = 0;
+			length = length >>> 0;
+			if (length > MAX_WRAPPER_LENGTH)
+				throw new Error(
+					'Maximum length allowed is '
+					+ MAX_WRAPPER_LENGTH + ': ' + length
+				);
+
+			var args = create(null),
+				generator = generators[length];
+
+			args.length = 0;
+
+			if (typeof f != 'function')
+				throw new TypeError('Function expected: ' + f);
+
+			if (!generator) {
+
+				for (var i = 0; i < length; i++)
+					push(args, '$' + i);
+
+				generator = _eval(
+					'(function(wrapF, original, apply) {'
+						+ '"use strict";'
+						+ 'var wrapper = function(' + join(args, ',') + ') {'
+							+ 'return apply(wrapF, this, arguments);'
+						+ '};'
+						// TODO: Come up with a good way to keep up with the
+						// original?
+						//+ 'wrapper.original = original;'
+						+ 'return wrapper;'
+					+ '})'
+				);
+
+				if (numGenerators < MAX_CACHED_GENERATORS) {
+					generators[length] = generator;
+					numGenerators++;
+				}
+
+			}
+
+			return generator(f, original, apply, _eval);
+
+		};
+
+	})();
+
+	return Object.freeze({
+
+		Object: Origin,
+		Boolean: create(Origin),
+		Number: create(Origin),
+		String: create(Origin),
+		Array: create(Origin),
+		Function: create(Origin),
+		Date: create(Origin),
+
+		ToNumber: ToNumber,
+		ToString: ToString,
+		ToType: ToType,
+
+		NilCoerce: NilCoerce,
+		NilSetThrow: NilSetThrow,
+
+		CreateObject: CreateObject,
+		CreateArray: CreateArray,
+
+		Bind: Bind,
+
+		Like: simile.like,
+		IsLike: simile.isLike,
+		New: simile.forge,
+		Mixin: simile.mixin,
+
+		Own: Own,
+
+		GetOwn: GetOwn,
+		SetOwn: SetOwn,
+		Call: Call,
+		CallMethod: CallMethod,
+		CallOwnMethod: CallOwnMethod
+
+	});
+
+})();

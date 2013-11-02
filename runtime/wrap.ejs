@@ -1,0 +1,53 @@
+(function(global) {
+
+	'use strict';
+
+	var $__proto__$ = (function() {
+
+		<% include simile %>
+		<% include proto %>
+
+		return proto;
+
+	})();
+
+	(function(global) {
+
+		var Object = global.Object,
+			Boolean = global.Boolean,
+			Number = global.Number,
+			String = global.String,
+			Array = global.Array,
+			Function = global.Function,
+			window = global.window;
+
+		(function() {
+
+			<%- source %>
+
+		})();
+
+	})(function() {
+
+		function createGlobal() {
+
+			var G = $__proto__$.CreateObject(global);
+
+			G.Object = $__proto__$.Object;
+			G.Boolean = $__proto__$.Boolean;
+			G.Number = $__proto__$.Number;
+			G.String = $__proto__$.String;
+			G.Array = $__proto__$.Array;
+			G.Function = $__proto__$.Function;
+			G.Date = $__proto__$.Date;
+			G.window = undefined;
+
+			return G;
+
+		}
+
+		return createGlobal();
+
+	}());
+
+})(this);

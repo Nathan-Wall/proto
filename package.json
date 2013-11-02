@@ -1,0 +1,36 @@
+{
+  "name": "Proto",
+  "version": "0.0.1",
+  "description": "ERROR: No README.md file found!",
+  "main": "lib/proto.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Nathan-Wall/proto.git"
+  },
+  "author": "Nathan Wall",
+  "license": "CC0",
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "ejs": "~0.8.4",
+    "escodegen": "~0.0.27",
+    "esprima": "~1.0.4"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "language",
+    "prototypes",
+    "prototypal",
+    "inheritance",
+    "syntax",
+    "ES6",
+    "transpile",
+    "transpiler",
+    "compile"
+  ]
+}
