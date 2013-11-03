@@ -1,0 +1,27 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'node', '/usr/local/bin/npm', 'init' ]
+2 info using npm@1.1.71
+3 info using node@v0.8.18
+4 verbose read json /Users/nwall/Dropbox/web/proto/tools/package.json
+5 silly package data undefined
+6 info init written successfully
+7 error Error: canceled
+7 error     at Interface.<anonymous> (/usr/local/lib/node_modules/npm/node_modules/read/lib/read.js:65:13)
+7 error     at Interface.EventEmitter.emit (events.js:126:20)
+7 error     at Interface._ttyWrite (readline.js:607:16)
+7 error     at ReadStream.onkeypress (readline.js:97:10)
+7 error     at ReadStream.EventEmitter.emit (events.js:126:20)
+7 error     at emitKey (readline.js:1058:12)
+7 error     at ReadStream.onData (readline.js:807:7)
+7 error     at ReadStream.EventEmitter.emit (events.js:96:17)
+7 error     at TTY.onread (net.js:397:14)
+8 error If you need help, you may report this log at:
+8 error     <http://github.com/isaacs/npm/issues>
+8 error or email it to:
+8 error     <npm-@googlegroups.com>
+9 error System Darwin 13.0.0
+10 error command "node" "/usr/local/bin/npm" "init"
+11 error cwd /Users/nwall/Dropbox/web/proto/tools
+12 error node -v v0.8.18
+13 error npm -v 1.1.71
+14 verbose exit [ 1, true ]

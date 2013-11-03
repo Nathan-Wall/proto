@@ -7,6 +7,7 @@ var proto = (function() {
 		TypeError = global.TypeError,
 
 		lazyBind = Function.prototype.bind.bind(Function.prototype.call),
+		lazyTie = Function.prototype.bind.bind(Function.prototype.apply),
 
 		create = Object.create,
 		getPrototypeOf = Object.getPrototypeOf,
@@ -19,10 +20,18 @@ var proto = (function() {
 		apply = lazyBind(Function.prototype.apply),
 		join = lazyBind(Array.prototype.join),
 		push = lazyBind(Array.prototype.push),
+		pushAll = lazyTie(Array.prototype.push),
 
 		NIL = create(null),
 
-		Origin = create(null);
+		ObjectProto = create(null),
+		BooleanProto = create(ObjectProto),
+		NumberProto = create(ObjectProto),
+		StringProto = create(ObjectProto),
+		ArrayProto = create(ObjectProto),
+		FunctionProto = create(ObjectProto),
+		DateProto = create(ObjectProto),
+		Reflect = create(ObjectProto);
 
 	function ToNumber(value) {
 		if (value === undefined)
@@ -60,7 +69,7 @@ var proto = (function() {
 	function CreateObject(proto, properties) {
 		var descriptors, key, desc;
 		if (proto === undefined)
-			proto = Origin;
+			proto = ObjectProto;
 		return simile.like(proto, properties);
 	}
 
@@ -81,6 +90,24 @@ var proto = (function() {
 		var F = GetFunction(f),
 			bound = arguments.length == 1 ? lazyBind(F) : lazyBind(F, receiver);
 		return createWrapper(F, (f.length >>> 0) + 1, bound);
+	}
+
+	function ArrayMerge(/* ...arrays */) {
+		var r = create(null);
+		r.length = 0;
+		for (var i = 0, u; i < arguments.length; i++) {
+			pushAll(r, arguments[i]);
+		}
+		return r;
+	}
+
+	function CheckSpread(value) {
+		if (simile.isLike(value, ArrayProto))
+			return value;
+		throw new TypeError(
+			'Array expected. '
+			+ 'Currently only arrays are allowed with the spread operator.'
+		);
 	}
 
 	function Own(obj) {
@@ -119,7 +146,7 @@ var proto = (function() {
 		return apply(GetFunction(f), receiver, args);
 	}
 
-	function GetFunction(f) {
+	function GetFunction(f, silent) {
 		var F = f,
 			checked = false;
 		do {
@@ -129,7 +156,9 @@ var proto = (function() {
 				throw new TypeError('Function expected');
 			checked = true;
 		} while (F = getPrototypeOf(F));
-		throw new TypeError('Function expected');
+		if (!silent)
+			throw new TypeError('Function expected');
+		return false;
 	}
 
 	function CallMethod(obj, prop, args) {
@@ -146,6 +175,10 @@ var proto = (function() {
 		if (!hasOwn(obj, P))
 			throw new TypeError('Object has no method "' + P + '"');
 		return CallMethod(obj, P, args);
+	}
+
+	function IsCallable(value) {
+		return GetFunction(value, true) !== false;
 	}
 
 	function define(obj, name, desc) {
@@ -274,13 +307,14 @@ var proto = (function() {
 
 	return Object.freeze({
 
-		Object: Origin,
-		Boolean: create(Origin),
-		Number: create(Origin),
-		String: create(Origin),
-		Array: create(Origin),
-		Function: create(Origin),
-		Date: create(Origin),
+		Object: ObjectProto,
+		Boolean: BooleanProto,
+		Number: NumberProto,
+		String: StringProto,
+		Array: ArrayProto,
+		Function: FunctionProto,
+		Date: DateProto,
+		Reflect: Reflect,
 
 		ToNumber: ToNumber,
 		ToString: ToString,
@@ -292,12 +326,14 @@ var proto = (function() {
 		CreateObject: CreateObject,
 		CreateArray: CreateArray,
 
-		Bind: Bind,
-
 		Like: simile.like,
 		IsLike: simile.isLike,
 		New: simile.forge,
 		Mixin: simile.mixin,
+
+		Bind: Bind,
+		ArrayMerge: ArrayMerge,
+		CheckSpread: CheckSpread,
 
 		Own: Own,
 
@@ -305,7 +341,9 @@ var proto = (function() {
 		SetOwn: SetOwn,
 		Call: Call,
 		CallMethod: CallMethod,
-		CallOwnMethod: CallOwnMethod
+		CallOwnMethod: CallOwnMethod,
+
+		IsCallable: IsCallable
 
 	});
 

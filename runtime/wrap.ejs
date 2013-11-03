@@ -19,6 +19,7 @@
 			String = global.String,
 			Array = global.Array,
 			Function = global.Function,
+			Reflect = global.Reflect,
 			window = global.window;
 
 		(function() {
@@ -40,7 +41,18 @@
 			G.Array = $__proto__$.Array;
 			G.Function = $__proto__$.Function;
 			G.Date = $__proto__$.Date;
+			G.Reflect = $__proto__$.Reflect;
 			G.window = undefined;
+
+			// TODO: reorganize
+			Object.defineProperty(G.Reflect, 'isCallable', {
+				value: function isCallable(value) {
+					return $__proto__$.IsCallable(value);
+				},
+				writable: true,
+				enumerable: false,
+				configurable: true
+			});
 
 			return G;
 

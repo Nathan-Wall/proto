@@ -1,11 +1,8 @@
 {
-  "name": "Proto",
+  "name": "protolang",
   "version": "0.0.1",
   "description": "ERROR: No README.md file found!",
   "main": "lib/proto.js",
-  "directories": {
-    "test": "test"
-  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,7 +16,8 @@
   "dependencies": {
     "ejs": "~0.8.4",
     "escodegen": "~0.0.27",
-    "esprima": "~1.0.4"
+    "esprima": "~1.0.4",
+    "commander": "~2.0.0"
   },
   "devDependencies": {},
   "keywords": [
