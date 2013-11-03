@@ -18,7 +18,7 @@ var A = { },
 </tr>
 
 <tr>
-<td>inheritance</td>
+<td>inheritance checking</td>
 <td><div class="highlight highlight-js"><pre>
 // A is a constructor
 B instanceof A
@@ -225,7 +225,7 @@ print(e ^ f);
 <td><div class="highlight"><pre>
 print(a and b);
 print(c or d);
-print(e or f);
+print(e xor f);
 </pre></div></td>
 </tr>
 
