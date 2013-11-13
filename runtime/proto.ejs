@@ -5,104 +5,214 @@ var proto = (function() {
 		String = global.String,
 		Error = global.Error,
 		TypeError = global.TypeError,
+		RangeError = global.RangeError,
+		Infinity = global.Infinity,
 
 		lazyBind = Function.prototype.bind.bind(Function.prototype.call),
 		lazyTie = Function.prototype.bind.bind(Function.prototype.apply),
 
 		create = Object.create,
 		getPrototypeOf = Object.getPrototypeOf,
+		freeze = Object.freeze,
 		keys = Object.keys,
 		defineProperty = Object.defineProperty,
 		getOwnPropertyNames = Object.getOwnPropertyNames,
 		getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor,
+		isArray = Array.isArray,
 
 		hasOwn = lazyBind(Object.prototype.hasOwnProperty),
 		apply = lazyBind(Function.prototype.apply),
+		bind = lazyBind(Function.prototype.bind),
 		join = lazyBind(Array.prototype.join),
 		push = lazyBind(Array.prototype.push),
 		pushAll = lazyTie(Array.prototype.push),
+		slice = lazyBind(Array.prototype.slice),
+		splice = lazyBind(Array.prototype.splice),
 
-		NIL = create(null),
+		ObjectProto = CreateObject(null),
+		BooleanProto = CreateObject(ObjectProto),
+		NumberProto = CreateObject(ObjectProto),
+		StringProto = CreateObject(ObjectProto),
+		ArrayProto = CreateObject(ObjectProto),
+		FunctionProto = CreateObject(ObjectProto),
+		DateProto = CreateObject(ObjectProto),
+		RangeProto = CreateObject(ObjectProto),
+		reflect = CreateObject(ObjectProto),
 
-		ObjectProto = create(null),
-		BooleanProto = create(ObjectProto),
-		NumberProto = create(ObjectProto),
-		StringProto = create(ObjectProto),
-		ArrayProto = create(ObjectProto),
-		FunctionProto = create(ObjectProto),
-		DateProto = create(ObjectProto),
-		Reflect = create(ObjectProto);
+		I = function I(value) { return value; };
 
+	// TODO: Make an extension so that objects can specify how they coerce to
+	// numbers.
 	function ToNumber(value) {
-		if (value === undefined)
+		if (value === null || value === undefined)
 			return 0;
+		if (IsObject(value))
+			return NaN;
 		return Number(value);
 	}
 
+	// TODO: Make an extension so that objects can specify how they coerce to
+	// strings.
 	function ToString(value) {
 		if (value === null || value === undefined)
 			return '';
+		if (IsObject(value))
+			return '[Object]';
 		return String(value);
+	}
+
+	// TODO: Probably replace with ToIterable once iterables are worked out
+	function ToArray(value) {
+		if (!IsObject(value))
+			throw new TypeError('Object expected');
+		if (IsLike(value, ArrayProto))
+			return value;
+		var r = create(null);
+		r.length = 0;
+		if (('From' in value) && ('To' in value)) {
+			if (value.From === Infinity || value.From === -Infinity
+			|| value.To === Infinity || value.To === -Infinity)
+				throw new RangeError('Infinite range');
+			if (value.From < value.To)
+				for (var i = value.From; i < value.To; i++)
+					push(r, i);
+			else
+				for (var i = value.From; i > value.To; i--)
+					push(r, i);				
+			return CreateArray(undefined, r);
+		}
+		throw new TypeError('Object is not iterable');
 	}
 
 	function ToType(value) {
 		if (value === null || value === undefined)
 			return 'nil';
-		var type = typeof value;
-		if (type == 'function')
-			return 'object';
-		return type;
+		// Note that since functions are wrapped, the return value should be
+		// "object".
+		return typeof value;
 	}
 
-	function NilCoerce(value) {
-		return value === null || value === undefined ? NIL : value;
-	}
-
-	function NilSetThrow(value) {
-		var error;
-		if (value === null || value === undefined) {
-			throw new TypeError('Cannot set property of nil');
-		}
-		return value;
-	}
-
+	// properties will always be a native JS object
 	function CreateObject(proto, properties) {
-		var descriptors, key, desc;
+		var wrapper, protoValue;
 		if (proto === undefined)
 			proto = ObjectProto;
-		return simile.like(proto, properties);
+		else if (proto !== null && !IsObject(proto))
+			throw new TypeError('Expected object or nil');
+		if (proto === null)
+			protoValue = null;
+		else
+			protoValue = proto.Value;
+		if (properties !== undefined) {
+			if (Object(properties) !== properties)
+				throw new TypeError('Object expected');
+		}
+		wrapper = create(proto);
+		wrapper.Value = simile.like(protoValue, properties);
+		return wrapper;
 	}
 
+	// elements will always be a native JS object
 	function CreateArray(proto, elements) {
-		var array = create(proto),
-			desc = create(null);
-		for (var i = 0; i < elements.length; i++)
-			array[i] = elements[i];
-		desc.value = elements.length;
-		desc.enumerable = false;
-		desc.writable = true;
-		desc.configurable = true;
-		defineProperty(array, 'length', desc);
-		return array;
+		var obj, L;
+		if (proto === undefined)
+			proto = ArrayProto;
+		obj = CreateObject(proto);
+		if (elements !== undefined) {
+			if (Object(elements) !== elements)
+				throw new TypeError('Object expected');
+			L = elements.length >>> 0;
+			for (var i = 0; i < L; i++)
+				SetOwn(obj, i, elements[i]);
+			define(obj.Value, 'length', {
+				value: L,
+				enumerable: false,
+				writable: true,
+				configurable: true
+			});
+		}
+		else
+			define(obj.Value, 'length', {
+				value: 0,
+				enumerable: false,
+				writable: true,
+				configurable: true
+			});
+		return obj;
 	}
 
-	function Bind(f, receiver) {
-		var F = GetFunction(f),
-			bound = arguments.length == 1 ? lazyBind(F) : lazyBind(F, receiver);
-		return createWrapper(F, (f.length >>> 0) + 1, bound);
+	function CreateFunction(proto, jsfn, length) {
+		if (proto === undefined)
+			proto = FunctionProto;
+		if (typeof jsfn != 'function')
+			throw new TypeError('Function expected');
+		if (length === undefined)
+			length = jsfn.length;
+		else
+			length = ToNumber(length) >>> 0;
+		var obj = CreateObject(proto);
+		obj.Function = jsfn;
+		define(obj.Value, 'length', {
+			value: length,
+			writable: true,
+			enumerable: false,
+			configurable: true
+		});
+		return obj;
 	}
 
-	function ArrayMerge(/* ...arrays */) {
+	function CreateRange(proto, from, to) {
+		if (proto === undefined)
+			proto = RangeProto;
+		var obj = CreateObject(proto);
+		from = ToNumber(from);
+		if (from !== from)
+			throw new RangeError('Invalid range bounds');
+		to = ToNumber(to);
+		if (to !== to)
+			throw new RangeError('Invalid range bounds');
+		obj.From = from;
+		obj.To = to;
+		return obj;
+	}
+
+	function Bind(obj, receiver) {
+		var f = GetFunction(obj),
+			bound;
+		if (arguments.length == 1)
+		 	bound = lazyBind(f);
+		else
+			bound = lazyBind(f, receiver);
+		return CreateFunction(FunctionProto, bound, f.length + 1);
+	}
+
+	function arrayMerge(/* ...arrays */) {
 		var r = create(null);
 		r.length = 0;
-		for (var i = 0, u; i < arguments.length; i++) {
-			pushAll(r, arguments[i]);
+		for (var i = 0, arg; i < arguments.length; i++) {
+			arg = arguments[i];
+			if (isArray(arg))
+				pushAll(r, arg);
+			else
+				pushAll(r, arg.Value);
 		}
-		return r;
+		return slice(r);
+	}
+
+	function PushAll(to, from) {
+		if (!IsObject(to))
+			throw new TypeError('Object expected');
+		if (!IsObject(from))
+			throw new TypeError('Object expected');
+		pushAll(to.Value, from.Value);
+	}
+
+	function arraySlice(array, from, to) {
+		return slice(array, from, to);
 	}
 
 	function CheckSpread(value) {
-		if (simile.isLike(value, ArrayProto))
+		if (IsLike(value, ArrayProto))
 			return value;
 		throw new TypeError(
 			'Array expected. '
@@ -110,7 +220,19 @@ var proto = (function() {
 		);
 	}
 
-	function Own(obj) {
+	function IsLike(obj, proto) {
+		if (!IsObject(obj))
+			return false;
+		// nil is always in the prototype chain of any object
+		if (proto === null || proto === undefined)
+			return true;
+		if (!IsObject(proto))
+			return false;
+		return simile.isLike(obj.Value, proto.Value);
+	}
+
+	// TODO: This may not be being used...
+	function own(obj) {
 		if (Object(obj) !== obj)
 			throw new TypeError('Object expected');
 		var O = create(null),
@@ -122,16 +244,159 @@ var proto = (function() {
 		return O;
 	}
 
-	function GetOwn(obj, key) {
-		if (hasOwn(obj, key))
-			return obj[key];
+	function Own(obj) {
+		if (!IsObject(obj))
+			throw new TypeError('Object expected');
+		var O = CreateObject(null),
+			keys = getOwnPropertyNames(obj.Value);
+		for (var i = 0, key; i < keys.length; i++) {
+			key = keys[i];
+			define(O.Value, key, getOwnPropertyDescriptor(obj.Value, key));
+		}
+		return O;
+	}
+
+	function Has(obj, key) {
+		if (!IsObject(obj))
+			return false;
+		return key in obj.Value;
+	}
+
+	function HasOwn(obj, key) {
+		if (!IsObject(obj))
+			return false;
+		return hasOwn(obj.Value, key);
+	}
+
+	function Get(obj, key, receiver) {
+		var desc, get, GetF, proto, K, T;
+		if (obj === null || obj === undefined)
+			return undefined;
+		if (receiver === null)
+			receiver = undefined;
+		if (IsObject(key) && 'From' in key && 'To' in key)
+			return Slice(obj, key.From, key.To, receiver);
+		K = ToString(key);
+		if (IsObject(obj)) {
+			if (receiver === undefined) {
+				if ('ProxyJs' in obj)
+					return proxyJs(obj.Value[K]);
+				else
+					return obj.Value[K];
+			}
+			else {
+				desc = getPropertyDescriptor(obj.Value, K);
+				if (desc == null)
+					return undefined;
+				else if (hasOwn(desc, 'get')) {
+					get = desc.get;
+					if (typeof get != 'function')
+						throw new TypeError('Function expected');
+					if (obj.ProxyJs) {
+						GetF = CreateFunction(null, get);
+						return proxyJs(Call(GetF, receiver, [ ]));
+					}
+					else {
+						GetF = get.__ProtoFunction__;
+						if (typeof GetF != 'function')
+							throw new TypeError('Function expected');
+						return Call(GetF, receiver, [ ]);
+					}
+				}
+				else if (hasOwn(desc, 'value')) {
+					if (obj.ProxyJs)
+						return proxyJs(desc.value);
+					else
+						return desc.value;
+				}
+				else
+					return undefined;
+			}
+		}
+		switch (T = typeof obj) {
+			case 'boolean': proto = BooleanProto; break;
+			case 'number': proto = NumberProto; break;
+			case 'string': proto = StringProto; break;
+			default: throw new TypeError('Unexpected type "' + T + '"');
+		}
+		if (receiver === undefined)
+			receiver = obj;
+		desc = GetDescriptor(proto, K);
+		if (desc === undefined)
+			return undefined;
+		if (hasOwn(desc, 'get')) {
+			get = desc.get;
+			if (typeof get != 'function')
+				throw new TypeError('Function expected');
+			return Call(get, receiver, [ ]);
+		}
+		else if (hasOwn(desc, 'value'))
+			return desc.Value;
+		else
+			return undefined;
+	}
+
+	function GetOwn(obj, key, receiver) {
+		var K;
+		if (obj === null || obj === undefined)
+			return undefined;
+		if (IsObject(key) && 'From' in key && 'To' in key)
+			return SliceOwn(obj, key.From, key.To, receiver);
+		K = ToString(key);
+		if (hasOwn(obj.Value, K))
+			return Get(obj, K, receiver);
 		return undefined;
 	}
 
-	function SetOwn(obj, key, value) {
-		if (hasOwn(obj, key))
-			return obj[key] = value;
-		define(obj, key, {
+	function Set(obj, key, value, receiver) {
+		var desc, set, SetF, K, R, handle = I;
+		if (obj === null || obj === undefined)
+			throw new TypeError('Cannot set property "' + key + '" of nil');
+		if (!IsObject(obj))
+			throw new TypeError('Object expected');
+		if (obj.ProxyJs)
+			handle = UnwrapProto;
+		K = ToString(key);
+		if (receiver === null || receiver === undefined) {
+			return obj.Value[K] = handle(value);
+		}
+		desc = getPropertyDescriptor(obj.Value, K);
+		if (desc == null)
+			return obj.Value[K] = handle(value);
+		else if (hasOwn(desc, 'set')) {
+			if (obj.ProxyJs) {
+				SetF = CreateFunction(null, set);
+				return UnwrapProto(Call(SetF, receiver, [ value ]));
+			}
+			else {
+				set = desc.set;
+				if (typeof set != 'function')
+					throw new TypeError('Function expected');
+				SetF = set.__ProtoFunction__;
+				if (typeof SetF != 'function')
+					throw new TypeError('Function expected');
+				return Call(SetF, receiver, [ value ]);
+			}
+		}
+		else if (hasOwn(desc, 'value'))
+			return obj.Value[K] = handle(value);
+		else
+			throw new TypeError(
+				'Object has a getter without a setter for property "'
+				+ K + '"'
+			);
+	}
+
+	function SetOwn(obj, key, value, receiver) {
+		var K;
+		if (obj === null || obj === undefined)
+			throw new TypeError('Cannot set property "' + key + '" of nil');
+		if (!IsObject(obj))
+			throw new TypeError('Object expected');
+		K = ToString(key);
+		if (!(K in obj.Value) || hasOwn(obj.Value, K))
+			return Set(obj, K, value, receiver);
+		define(obj.Value, key, {
 			value: value,
 			// Leaving enumerable on here to keep foo#bar = 5 consistent with
 			// foo.bar = 5.
@@ -142,44 +407,188 @@ var proto = (function() {
 		return value;
 	}
 
+	// args should always be a native JS array (or undefined)
 	function Call(f, receiver, args) {
-		return apply(GetFunction(f), receiver, args);
+		var F = GetFunction(f);
+		if (args !== undefined) {
+			if (!isArray(args))
+				throw new TypeError('Native JS Array expected');
+		}
+		return apply(F, receiver, args);
 	}
 
-	function GetFunction(f, silent) {
-		var F = f,
-			checked = false;
-		do {
-			if (typeof F == 'function')
-				return F;
-			if (!checked && Object(f) !== f)
-				throw new TypeError('Function expected');
-			checked = true;
-		} while (F = getPrototypeOf(F));
-		if (!silent)
+	function GetFunction(F) {
+		var f;
+		if (!IsObject(F))
 			throw new TypeError('Function expected');
-		return false;
+		f = F.Function;
+		if (typeof f != 'function')
+			throw new TypeError('Function expected');
+		return f;
 	}
 
 	function CallMethod(obj, prop, args) {
-		if (Object(obj) !== obj)
+		var P, F;
+		if (!IsObject(obj))
 			throw new TypeError('Object expected');
-		var f = obj[prop];
-		return Call(f, obj, args);
+		P = ToString(prop);
+		F = Get(obj, P);
+		return Call(F, obj, args);
 	}
 
 	function CallOwnMethod(obj, prop, args) {
-		if (Object(obj) !== obj)
+		var P;
+		if (!IsObject(obj))
 			throw new TypeError('Object expected');
-		var P = String(prop);
+		P = ToString(prop);
 		if (!hasOwn(obj, P))
 			throw new TypeError('Object has no method "' + P + '"');
 		return CallMethod(obj, P, args);
 	}
 
-	function IsCallable(value) {
-		return GetFunction(value, true) !== false;
+	function IsObject(value) {
+		if (Object(value) !== value)
+			return false;
+		if (!hasOwn(value, 'Value'))
+			throw new TypeError('Wrapper expected');
+		return true;
 	}
+
+	function IsCallable(value) {
+		if (!IsObject(value))
+			return false;
+		var F = value.Function;
+		return typeof F == 'function';
+	}
+
+	function GetOwnKeys(obj) {
+		if (obj === undefined || obj === null)
+			return CreateArray(ArrayProto);
+		if (!IsObject(obj))
+			throw new TypeError('Object expected');
+		return CreateArray(ArrayProto, getOwnPropertyNames(obj.Value));
+	}
+
+	function Slice(obj, from, to, receiver) {
+		// TODO: Get `receiver` working (it should be the receiver for getters
+		// when retrieving properties from obj).
+		// TODO: the prototype for the sliced object should probably not always
+		// be array proto but should be derived from the argument somehow
+		var R;
+		if (!IsObject(obj))
+			return CreateArray(ArrayProto);
+		from = ToNumber(from);
+		to = ToNumber(to);
+		if (from < to)
+			return CreateArray(ArrayProto, slice(obj.Value, from, to));
+		else {
+			R = CreateArray(ArrayProto);
+			for (var i = from, j = 0;
+				from < to ? i < to : i > to;
+				from < to ? i++ : i--)
+					SetOwn(R, j++, GetOwn(obj, i));
+			return R;
+		}
+	}
+
+	function SliceOwn(obj, from, to, receiver) {
+		// TODO: the prototype for the sliced object should probably not always
+		// be array proto but should be derived from the argument somehow
+		var R;
+		if (!IsObject(obj))
+			return CreateArray(ArrayProto);
+		from = ToNumber(from);
+		to = ToNumber(to);
+		R = CreateArray(ArrayProto);
+		for (var i = from, j = 0; i > to; i--)
+				// I'm pretty sure SetOwn will mimic Array#slice correctly..
+				// TODO: double check on this
+				SetOwn(R, j++, Get(obj, i));
+		return R;
+	}
+
+	function Freeze(obj) {
+		if (!IsObject(obj))
+			throw new TypeError('Object expected');
+		freeze(obj.Value);
+		return obj;
+	}
+
+	function proxyJs(value) {
+		if (Object(value) !== value)
+			return value;
+		var p = CreateObject(null);
+		// TODO: How will this work with inheritance?
+		p.ProxyJs = true;
+		p.Value = value;
+		if (typeof value == 'function')
+			p.Function = function() {
+				var receiver = this,
+					args = create(null);
+				args.length = 0;
+				if (IsObject(receiver))
+					receiver = receiver.Value;
+				for (var i = 0, arg; i < arguments.length; i++) {
+					arg = arguments[i];
+					if (IsObject(arg)) {
+						if (arg.ProxyJs)
+							arg = UnproxyJs(arg);
+						else
+							arg = UnwrapProto(arg);
+					}
+					push(args, arg);
+				}
+				return proxyJs(apply(value, receiver, args));
+			};
+		return p;
+	}
+
+	function UnproxyJs(value) {
+		if (IsObject(value))
+			return value.Value;
+		return value;
+	}
+
+	// TODO: Some work will probably need to be done on this for functions...
+	function UnwrapProto(value) {
+		var res, V, ks;
+		if (!IsObject(value))
+			return value;
+		V = value.Value;
+		res = create(UnwrapProto(getPrototypeOf(value)));
+		ks = keys(V);
+		for (var i = 0, k, d; i < ks.length; i++) {
+			k = ks[i];
+			d = getOwnPropertyDescriptor(V, k);
+			if (hasOwn(d, 'value'))
+				d.value = UnwrapProto(d.value);
+			if (hasOwn(d, 'get'))
+				d.get = UnproxyProtoFunction(d.get);
+			if (hasOwn(d, 'set'))
+				d.set = UnproxyProtoFunction(d.set);
+			define(res, k, d);
+		}
+		return res;
+	}
+
+	// TODO: Copy properties from the __ProtoFunction__?
+	function UnproxyProtoFunction(F) {
+		return function() {
+			var args = create(null);
+			args.length = 0;
+			for (var i = 0; i < arguments.length; i++)
+				args[i] = proxyJs(arguments[i]);
+			apply(F, proxyJs(this), args);
+		};
+	}
+
+	// TODO: If Define exists, it should probably operate on a wrapped desc. ??
+	// function Define(obj, key, desc) {
+	// 	if (!IsObject(obj))
+	// 		throw new TypeError('Object expected');
+	// 	define(obj.Value, key desc);
+	// 	return obj;
+	// }
 
 	function define(obj, name, desc) {
 		if ('value' in desc && !hasOwn(desc, 'value')
@@ -205,6 +614,88 @@ var proto = (function() {
 		return O;
 	}
 
+	function getPropertyDescriptor(obj, key) {
+		var desc, K;
+		if (Object(obj) !== obj)
+			throw new TypeError('Object expected');
+		K = String(key);
+		do {
+			desc = getOwnPropertyDescriptor(obj, K);
+		} while (desc === undefined && (obj = getPrototypeOf(obj)));
+		return desc;
+	}
+
+	function GetDescriptor(obj, key) {
+		if (!IsObject(obj))
+			throw new TypeError('Object expected');
+		key = ToString(key);
+		if (!(key in obj.Value))
+			return undefined;
+		var desc = getPropertyDescriptor(obj.Value, key),
+			K = keys(desc),
+			d = create(null);
+		for (var i = 0, k; i < K.length; i++) {
+			k = K[i];
+			if (k == 'get' || k == 'set')
+				d[k] = CreateFunction(FunctionProto, desc[k]);
+			else
+				d[k] = desc[k];
+		}
+		return CreateObject(null, d);
+	}
+
+	function GetOwnDescriptor(obj, key) {
+		if (!IsObject(obj))
+			throw new TypeError('Object expected');
+		key = ToString(key);
+		if (hasOwn(obj.Value, key))
+			return GetDescriptor(obj, key);
+		return undefined;
+	}
+
+	function Like(obj) {
+		if (obj === undefined)
+			obj = null;
+		if (obj !== null && !IsObject(obj))
+			throw new TypeError('Object expected');
+		return CreateObject(obj);
+	}
+
+	function New(obj, args) {
+		if (!IsObject(obj))
+			throw new TypeError('Object expected');
+		var newObj = CreateObj(obj),
+			init = newObj.Value.init;
+		if (typeof init == 'function')
+			return Call(init, newObj, args);
+		return newObj;
+	}
+
+	function Mixin(to, from) {
+		if (!IsObject(to))
+			throw new TypeError('Object expected');
+		// Mixin with nil as the second arg is ignored.
+		if (from === null || from === undefined)
+			return to;
+		if (!IsObject(from))
+			throw new TypeError('Object expected');
+		simile.mixin(to.Value, from.Value);
+		return to;
+	}
+
+	function __convertFunctions__(obj) {
+		var ret = CreateObject(null),
+			K = keys(obj);
+		for (var i = 0, k; i < K.length; i++) {
+			k = K[i];
+			if (typeof obj[k] == 'function')
+				ret.Value[k] = CreateFunction(FunctionProto, obj[k]);
+		}
+		return ret;
+	}
+
+	// TODO: This currently isn't being used. Remove it?
+	//
 	// Creates a wrapper function with the same length as the original.
 	// Arity is preserved (`length`) but the function's `name` is lost. It is
 	// possible to preserve the name, but it requires use of `eval` on each
@@ -305,7 +796,7 @@ var proto = (function() {
 
 	})();
 
-	return Object.freeze({
+	return freeze({
 
 		Object: ObjectProto,
 		Boolean: BooleanProto,
@@ -314,36 +805,56 @@ var proto = (function() {
 		Array: ArrayProto,
 		Function: FunctionProto,
 		Date: DateProto,
-		Reflect: Reflect,
+		Range: RangeProto,
+		reflect: reflect,
 
 		ToNumber: ToNumber,
 		ToString: ToString,
+		ToArray: ToArray,
 		ToType: ToType,
-
-		NilCoerce: NilCoerce,
-		NilSetThrow: NilSetThrow,
 
 		CreateObject: CreateObject,
 		CreateArray: CreateArray,
+		CreateFunction: CreateFunction,
+		CreateRange: CreateRange,
 
-		Like: simile.like,
-		IsLike: simile.isLike,
-		New: simile.forge,
-		Mixin: simile.mixin,
+		Like: Like,
+		IsLike: IsLike,
+		New: New,
+		Mixin: Mixin,
 
+		bind: bind,
 		Bind: Bind,
-		ArrayMerge: ArrayMerge,
+		arrayMerge: arrayMerge,
+		arraySlice: arraySlice,
 		CheckSpread: CheckSpread,
 
 		Own: Own,
 
+		Has: Has,
+		HasOwn: HasOwn,
+		Get: Get,
 		GetOwn: GetOwn,
+		Set: Set,
 		SetOwn: SetOwn,
 		Call: Call,
 		CallMethod: CallMethod,
 		CallOwnMethod: CallOwnMethod,
 
-		IsCallable: IsCallable
+		IsObject: IsObject,
+		IsCallable: IsCallable,
+		GetOwnKeys: GetOwnKeys,
+
+		Slice: Slice,
+		SliceOwn: SliceOwn,
+
+		proxyJs: proxyJs,
+
+		Infinity: Infinity,
+
+		toWrapped: function toWrapped() {
+			return Freeze(__convertFunctions__(this));
+		}
 
 	});
 

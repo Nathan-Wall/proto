@@ -1,0 +1,21 @@
+// TODO: make length setting work
+
+fn insert(index | uint, ...args) :{
+	function(this);
+	// TODO: 
+	//return (...r) -> this(...[ ...r[0..index], ...args, r[index..inf] ]);
+}
+
+fn prepend(...args) :{
+	function(this);
+	return (...r) -> this(...args, ...r);
+}
+
+fn append(...args) :{
+	function(this);
+	return (...r) -> this(...r, ...args);
+}
+
+Function := {
+	insert, prepend, append
+};

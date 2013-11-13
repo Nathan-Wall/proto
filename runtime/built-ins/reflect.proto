@@ -1,0 +1,33 @@
+fn getDescriptor(obj, key) :{
+	return P.GetDescriptor(obj, key);
+}
+
+fn getOwnDescriptor(obj, key) :{
+	return P.GetOwnDescriptor(obj, key);
+}
+
+fn has(obj, key) :{
+	// TODO: make sure in operator calls ToString() on left operand and converts right operand to JS object
+	return key in obj;
+}
+
+fn hasOwn(obj, key) :{
+	return P.HasOwn(obj, key);
+}
+
+fn isCallable(value) :{
+	return P.IsCallable(value);
+}
+
+fn ownKeys(value) :{
+	return P.GetOwnKeys(value);
+}
+
+fn isObject(value) :{
+	return P.IsObject(value);
+}
+
+reflect := {
+	getDescriptor, getOwnDescriptor, has, hasOwn, isCallable,
+	ownKeys, isObject
+};

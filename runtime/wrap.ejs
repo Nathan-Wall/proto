@@ -11,55 +11,32 @@
 
 	})();
 
-	(function(global) {
+	(function() {
 
-		var Object = global.Object,
-			Boolean = global.Boolean,
-			Number = global.Number,
-			String = global.String,
-			Array = global.Array,
-			Function = global.Function,
-			Reflect = global.Reflect,
-			window = global.window;
+		var Object, Boolean, Number, String, Array, Function, Range, reflect,
+			boolean, number, int, uint, string, function_, inf;
 
 		(function() {
 
-			<%- source %>
+			Object = $__proto__$.Object;
+			Boolean = $__proto__$.Boolean;
+			Number = $__proto__$.Number;
+			String = $__proto__$.String;
+			Array = $__proto__$.Array;
+			Function = $__proto__$.Function;
+			Range = $__proto__$.Range;
+			reflect = $__proto__$.reflect;
+			inf = $__proto__$.Infinity;
+
+			var P = $__proto__$.toWrapped();
+			<%- _transpileFile('built-ins/built-ins.proto') %>
 
 		})();
 
-	})(function() {
+		(function() {
+			<%- source %>
+		})();
 
-		function createGlobal() {
-
-			var G = $__proto__$.CreateObject(global);
-
-			G.Object = $__proto__$.Object;
-			G.Boolean = $__proto__$.Boolean;
-			G.Number = $__proto__$.Number;
-			G.String = $__proto__$.String;
-			G.Array = $__proto__$.Array;
-			G.Function = $__proto__$.Function;
-			G.Date = $__proto__$.Date;
-			G.Reflect = $__proto__$.Reflect;
-			G.window = undefined;
-
-			// TODO: reorganize
-			Object.defineProperty(G.Reflect, 'isCallable', {
-				value: function isCallable(value) {
-					return $__proto__$.IsCallable(value);
-				},
-				writable: true,
-				enumerable: false,
-				configurable: true
-			});
-
-			return G;
-
-		}
-
-		return createGlobal();
-
-	}());
+	})();
 
 })(this);

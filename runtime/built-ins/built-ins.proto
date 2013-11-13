@@ -1,0 +1,8 @@
+import 'globals.proto';
+import 'Boolean.proto';
+import 'Number.proto';
+import 'String.proto';
+import 'Function.proto';
+//import 'Array.proto';
+import 'Range.proto';
+import 'reflect.proto';

@@ -1,0 +1,25 @@
+boolean = boolean(value) :{
+	return !!value;
+};
+
+number = number(value) :{
+	return +value;
+};
+
+int = int(value) :{
+	return value or 0;
+};
+
+uint = uint(value) :{
+	return value >>> 0;
+};
+
+string = string(value) :{
+	return &value;
+};
+
+function = function(value) :{
+	if (!P.IsCallable(value))
+		throw new TypeError('Function expected');
+	return value;
+};
