@@ -38,6 +38,6 @@ This simple server can be useful when developing Proto scripts so that you don't
 
 Please see the following links for more information on Proto.
 
-+ [Explanation of Design Decisions](DESIGN.md)
-+ [Descriptive Overview of Differences With JavaScript](OVERVIEW.md)
-+ [Side-By-Side Comparison With JavaScript](VS-JS.md)
++ [Explanation of Design Decisions](https://github.com/Nathan-Wall/proto/blob/master/DESIGN.md)
++ [Descriptive Overview of Differences With JavaScript](https://github.com/Nathan-Wall/proto/blob/master/OVERVIEW.md)
++ [Side-By-Side Comparison With JavaScript](https://github.com/Nathan-Wall/proto/blob/master/VS-JS.md)

@@ -1,0 +1,14 @@
+// import { @get, @getOwn, @set, @setOwn, @delete } from '@symbols';
+
+fn init() :{
+	P.SymbolInit(this);
+}
+
+Symbol := {
+	init
+};
+
+// Symbol := {
+// 	init,
+// 	@get: get
+// };

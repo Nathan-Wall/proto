@@ -1,0 +1,380 @@
+// properties will always be a native JS object
+function CreateObject(proto, properties) {
+	var wrapper, protoValue;
+	if (proto === undefined)
+		proto = ObjectProto;
+	else if (proto !== null && !IsObject(proto))
+		throw new TypeError('Expected object or nil');
+	if (proto === null)
+		protoValue = null;
+	else
+		protoValue = proto.Value;
+	if (properties !== undefined) {
+		if (Object(properties) !== properties)
+			throw new TypeError('Object expected');
+	}
+	wrapper = create(proto);
+	wrapper.Value = simile.like(protoValue, properties);
+	return wrapper;
+}
+
+function CreatePrimitiveWrapper(proto) {
+	var wrapper, protoValue;
+	if (!IsObject(proto))
+		throw new TypeError('Expected object');
+	protoValue = proto.Value;
+	wrapper = create(proto);
+	wrapper.Value = create(protoValue);
+	wrapper.Primitive = true;
+	return wrapper;
+}
+
+function IsWrapper(value) {
+	if (Object(value) !== value)
+		return false;
+	if (!hasOwn(value, 'Value'))
+		throw new TypeError('Wrapper expected');
+	return true;	
+}
+
+function IsObject(value) {
+	return IsWrapper(value) && !value.Primitive;
+}
+
+function IsPrimitiveWrapper(value) {
+	return IsWrapper(value) && !!value.Primitive;
+}
+
+function CheckSpread(value) {
+	if (IsLike(value, ArrayProto))
+		return value;
+	throw new TypeError(
+		'Array expected. '
+		+ 'Currently only arrays are allowed with the spread operator.'
+	);
+}
+
+function IsLike(obj, proto) {
+	if (!IsObject(obj))
+		return false;
+	// nil is always in the prototype chain of any object
+	if (proto === null || proto === undefined)
+		return true;
+	if (!IsObject(proto))
+		return false;
+	return simile.isLike(obj.Value, proto.Value);
+}
+
+function Own(obj) {
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	var O = CreateObject(null),
+		keys = getOwnPropertyNames(obj.Value);
+	for (var i = 0, key; i < keys.length; i++) {
+		key = keys[i];
+		define(O.Value, key, getOwnPropertyDescriptor(obj.Value, key));
+	}
+	return O;
+}
+
+function Has(obj, key) {
+	var K;
+	if (!IsObject(obj))
+		return false;
+	if (IsWrapper(key)) {
+		if ('Has' in key)
+			return key.Has(obj);
+		else
+			throw new Error(
+				'Object cannot be used as a property key in has operation'
+			);
+	}
+	K = ToString(key);
+	return K in obj.Value;
+}
+
+function HasOwn(obj, key) {
+	var K;
+	if (!IsObject(obj))
+		return false;
+	if (IsWrapper(key)) {
+		if ('HasOwn' in key)
+			return key.HasOwn(obj);
+		else
+			throw new Error(
+				'Object cannot be used as a property key in has operation'
+			);
+	}
+	K = ToString(key);
+	return hasOwn(obj.Value, K);
+}
+
+function Get(obj, key, receiver) {
+	var desc, get, GetF, proto, K, T;
+	if (obj === null || obj === undefined)
+		return undefined;
+	if (receiver === null)
+		receiver = undefined;
+	if (IsWrapper(key)) {
+		if ('Get' in key)
+			return key.Get(obj, receiver);
+		else
+			throw new Error(
+				'Object cannot be used as a property key in get operation'
+			);
+	}
+	K = ToString(key);
+	if (IsWrapper(obj)) {
+		if (receiver === undefined) {
+			if ('ProxyJs' in obj)
+				return proxyJs(obj.Value[K]);
+			else
+				return obj.Value[K];
+		}
+		else {
+			desc = getPropertyDescriptor(obj.Value, K);
+			if (desc == null)
+				return undefined;
+			else if (hasOwn(desc, 'get')) {
+				get = desc.get;
+				if (typeof get != 'function')
+					throw new TypeError('Function expected');
+				if (obj.ProxyJs) {
+					GetF = CreateFunction(null, get);
+					return proxyJs(Call(GetF, receiver, [ ]));
+				}
+				else {
+					GetF = get.__ProtoFunction__;
+					if (typeof GetF != 'function')
+						throw new TypeError('Function expected');
+					return Call(GetF, receiver, [ ]);
+				}
+			}
+			else if (hasOwn(desc, 'value')) {
+				if (obj.ProxyJs)
+					return proxyJs(desc.value);
+				else
+					return desc.value;
+			}
+			else
+				return undefined;
+		}
+	}
+	switch (T = typeof obj) {
+		case 'boolean': proto = BooleanProto; break;
+		case 'number': proto = NumberProto; break;
+		case 'string': proto = StringProto; break;
+		default: throw new TypeError('Unexpected type "' + T + '"');
+	}
+	if (receiver === undefined)
+		receiver = obj;
+	desc = GetDescriptor(proto, K);
+	if (desc === undefined)
+		return undefined;
+	if (hasOwn(desc, 'get')) {
+		get = desc.get;
+		if (typeof get != 'function')
+			throw new TypeError('Function expected');
+		return Call(get, receiver, [ ]);
+	}
+	else if (hasOwn(desc, 'value'))
+		return desc.Value;
+	else
+		return undefined;
+}
+
+function GetOwn(obj, key, receiver) {
+	var K;
+	if (obj === null || obj === undefined)
+		return undefined;
+	if (IsWrapper(key)) {
+		if ('GetOwn' in key)
+			return key.GetOwn(obj, receiver);
+		else
+			throw new Error(
+				'Object cannot be used as a property key in get operation'
+			);
+	}
+	K = ToString(key);
+	if (hasOwn(obj.Value, K))
+		return Get(obj, K, receiver);
+	return undefined;
+}
+
+function Set(obj, key, value, receiver) {
+	var desc, set, SetF, K, R, handle = I;
+	if (obj === null || obj === undefined)
+		throw new TypeError('Cannot set property of nil');
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	if (obj.ProxyJs)
+		handle = UnwrapProto;
+	// TODO: Symbol setters
+	if (IsWrapper(key)) {
+		if ('Set' in key) {
+			value = handle(value);
+			key.Set(obj, value, receiver);
+			return value;
+		}
+		else
+			throw new Error(
+				'Object cannot be used as a property key in set operation'
+			);
+	}
+	K = ToString(key);
+	if (receiver === null || receiver === undefined) {
+		return obj.Value[K] = handle(value);
+	}
+	desc = getPropertyDescriptor(obj.Value, K);
+	if (desc == null)
+		return obj.Value[K] = handle(value);
+	else if (hasOwn(desc, 'set')) {
+		if (obj.ProxyJs) {
+			SetF = CreateFunction(null, set);
+			return UnwrapProto(Call(SetF, receiver, [ value ]));
+		}
+		else {
+			set = desc.set;
+			if (typeof set != 'function')
+				throw new TypeError('Function expected');
+			SetF = set.__ProtoFunction__;
+			if (typeof SetF != 'function')
+				throw new TypeError('Function expected');
+			return Call(SetF, receiver, [ value ]);
+		}
+	}
+	else if (hasOwn(desc, 'value'))
+		return obj.Value[K] = handle(value);
+	else
+		throw new TypeError(
+			'Object has a getter without a setter for property "'
+			+ K + '"'
+		);
+}
+
+function SetOwn(obj, key, value, receiver) {
+	var K;
+	if (obj === null || obj === undefined)
+		throw new TypeError('Cannot set property of nil');
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	if (IsWrapper(key)) {
+		if ('SetOwn' in key) {
+			value = handle(value);
+			key.SetOwn(obj, value, receiver);
+			return value;
+		}
+		else
+			throw new Error(
+				'Object cannot be used as a property key in set operation'
+			);
+	}
+	K = ToString(key);
+	if (!(K in obj.Value) || hasOwn(obj.Value, K))
+		return Set(obj, K, value, receiver);
+	define(obj.Value, K, {
+		value: value,
+		// Leaving enumerable on here to keep foo#bar = 5 consistent with
+		// foo.bar = 5.
+		enumerable: true,
+		writable: true,
+		configurable: true
+	});
+	return value;
+}
+
+function Delete(obj, key) {
+	var K;
+	if (obj === null || obj === undefined)
+		throw new TypeError('Cannot delete property of nil');
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	if (IsWrapper(key)) {
+		if ('Delete' in key)
+			return !!key.Delete(obj);
+		else
+			throw new TypeError(
+				'Object cannot be used as a property key in delete'
+				+ 'operation'
+			);
+	}
+	K = ToString(key);
+	return delete obj.Value[K];
+}
+
+function GetOwnKeys(obj) {
+	if (obj === undefined || obj === null || !IsObject(obj))
+		return CreateArray(ArrayProto);
+	return CreateArray(ArrayProto, getOwnPropertyNames(obj.Value));
+}
+
+function Freeze(obj) {
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	freeze(obj.Value);
+	return obj;
+}
+
+function GetDescriptor(obj, key) {
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	key = ToString(key);
+	if (!(key in obj.Value))
+		return undefined;
+	var desc = getPropertyDescriptor(obj.Value, key),
+		K = keys(desc),
+		d = create(null);
+	for (var i = 0, k; i < K.length; i++) {
+		k = K[i];
+		if (k == 'get' || k == 'set')
+			d[k] = CreateFunction(FunctionProto, desc[k]);
+		else
+			d[k] = desc[k];
+	}
+	return CreateObject(null, d);
+}
+
+function GetOwnDescriptor(obj, key) {
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	key = ToString(key);
+	if (hasOwn(obj.Value, key))
+		return GetDescriptor(obj, key);
+	return undefined;
+}
+
+function Like(obj) {
+	if (obj === undefined)
+		obj = null;
+	if (obj !== null && !IsObject(obj))
+		throw new TypeError('Object expected');
+	return CreateObject(obj);
+}
+
+function New(obj, args) {
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	var newObj = CreateObject(obj),
+		init = newObj.Value.init;
+	if (IsCallable(init))
+		Call(init, newObj, args);
+	return newObj;
+}
+
+function Mixin(to, from) {
+	if (!IsObject(to))
+		throw new TypeError('Object expected');
+	// Mixin with nil as the second arg is ignored.
+	if (from === null || from === undefined)
+		return to;
+	if (!IsObject(from))
+		throw new TypeError('Object expected');
+	simile.mixin(to.Value, from.Value);
+	return to;
+}
+
+function GetPrototype(obj) {
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	return getPrototypeOf(obj);
+}

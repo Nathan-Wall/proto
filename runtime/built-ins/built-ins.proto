@@ -5,4 +5,5 @@ import 'String.proto';
 import 'Function.proto';
 //import 'Array.proto';
 import 'Range.proto';
+import 'Symbol.proto';
 import 'reflect.proto';

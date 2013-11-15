@@ -7,7 +7,8 @@ fn getOwnDescriptor(obj, key) :{
 }
 
 fn has(obj, key) :{
-	// TODO: make sure in operator calls ToString() on left operand and converts right operand to JS object
+	// TODO: make sure in operator calls ToString() on left operand and converts
+	// right operand to JS object
 	return key in obj;
 }
 
@@ -17,6 +18,23 @@ fn hasOwn(obj, key) :{
 
 fn isCallable(value) :{
 	return P.IsCallable(value);
+}
+
+fn keys(value) :{
+	// TODO: make shortcut in transpiler for this form and the #{ } form, for
+	// performance
+	var k = #[ ],
+		ks,
+		p = value,
+		i = 0;
+	// TODO: Can the `do` be removed from the do..while loop? Bad idea?
+	do :{
+		ks = P.GetOwnKeys(p);
+		for (var j = 0; j < ks.length; j++)
+			k[i++] = ks[j];
+	} while (p = P.GetPrototype(p));
+	k.length = i;
+	return P.CreateArray(Array, k);
 }
 
 fn ownKeys(value) :{
@@ -29,5 +47,5 @@ fn isObject(value) :{
 
 reflect := {
 	getDescriptor, getOwnDescriptor, has, hasOwn, isCallable,
-	ownKeys, isObject
+	keys, ownKeys, isObject
 };

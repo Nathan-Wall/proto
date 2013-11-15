@@ -1,10 +1,10 @@
 # Descriptive Overview of the Proto Language
 
-This is a descriptive overview of the Proto language as it compares to JavaScript.  There is also a [quick side-by-side comparison](VS-JS.md).
+This is a descriptive overview of the Proto language as it compares to JavaScript.  There is also a [quick side-by-side comparison](https://github.com/Nathan-Wall/proto/blob/master/VS-JS.md).
 
 ## Prototypal Programming
 
-(See also [Overview of Design Decisions](DESIGN.md#prototypal-programming).)
+(See also [Overview of Design Decisions](https://github.com/Nathan-Wall/proto/blob/master/DESIGN.md#prototypal-programming).)
 
 ### Inheritance Operator (`like`)
 
@@ -84,7 +84,7 @@ So what's the difference between `new` and `like`?
 
 ## Integrity
 
-(See also [Overview of Design Decisions](DESIGN.md#integrity).)
+(See also [Overview of Design Decisions](https://github.com/Nathan-Wall/proto/blob/master/DESIGN.md#integrity).)
 
 ### Bind Operator (`::`)
 
@@ -154,7 +154,7 @@ As a unary operator, it takes an object as its right operand and essentially ret
 
 In JavaScript, it's common to use objects as dictionaries.  However, there are some problems with using regular objects as dictionaries because clashes could occur between entries and properties on `Object.prototype`.
 
-ES5 made it possible to create objects without a prototype by using `Object.create(null)`.  There are plans for ES6 to make this easier with [dicts](http://wiki.ecmascript.org/doku.php?id=harmony:modules_standard).  Proto provides the `#` operator to encourage making creating prototypeless objects common.
+ES5 made it possible to create objects without a prototype by using `Object.create(null)`.  There are plans for ES6 to make this easier with [dicts](http://wiki.ecmascript.org/doku.php?id=harmony:modules_standard).  Proto provides the `#` operator to encourage creating prototypeless objects common, for use as dictionaries.
 
     var animals = #{
         'monkey': 'A mammal of the order of Primates',
@@ -227,7 +227,7 @@ The `#` operator can also work for setting own propreties.
 
 ## Syntax
 
-(See also [Overview of Design Decisions](DESIGN.md#syntax).)
+(See also [Overview of Design Decisions](https://github.com/Nathan-Wall/proto/blob/master/DESIGN.md#syntax).)
 
 ### Required Semicolon (`;`)
 

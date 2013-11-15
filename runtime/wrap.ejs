@@ -5,7 +5,7 @@
 	var $__proto__$ = (function() {
 
 		<% include simile %>
-		<% include proto %>
+		<% include proto/proto %>
 
 		return proto;
 
@@ -13,8 +13,8 @@
 
 	(function() {
 
-		var Object, Boolean, Number, String, Array, Function, Range, reflect,
-			boolean, number, int, uint, string, function_, inf;
+		var Object, Boolean, Number, String, Array, Function, Range, Symbol,
+			reflect, boolean, number, int, uint, string, function_, inf;
 
 		(function() {
 
@@ -25,6 +25,7 @@
 			Array = $__proto__$.Array;
 			Function = $__proto__$.Function;
 			Range = $__proto__$.Range;
+			Symbol = $__proto__$.Symbol;
 			reflect = $__proto__$.reflect;
 			inf = $__proto__$.Infinity;
 

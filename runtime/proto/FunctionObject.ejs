@@ -1,0 +1,75 @@
+function CreateFunction(proto, jsfn, length) {
+	if (proto === undefined)
+		proto = FunctionProto;
+	if (typeof jsfn != 'function')
+		throw new TypeError('Function expected');
+	if (length === undefined)
+		length = jsfn.length;
+	else
+		length = ToNumber(length) >>> 0;
+	var obj = CreateObject(proto);
+	obj.Function = jsfn;
+	define(obj.Value, 'length', {
+		value: length,
+		writable: true,
+		enumerable: false,
+		configurable: true
+	});
+	return obj;
+}
+
+function IsCallable(value) {
+	if (!IsObject(value))
+		return false;
+	var F = value.Function;
+	return typeof F == 'function';
+}
+
+// args should always be a native JS array (or undefined)
+function Call(f, receiver, args) {
+	var F = GetFunction(f);
+	if (args !== undefined) {
+		if (!isArray(args))
+			throw new TypeError('Native JS Array expected');
+	}
+	return apply(F, receiver, args);
+}
+
+function GetFunction(F) {
+	var f;
+	if (!IsObject(F))
+		throw new TypeError('Function expected');
+	f = F.Function;
+	if (typeof f != 'function')
+		throw new TypeError('Function expected');
+	return f;
+}
+
+function CallMethod(obj, prop, args) {
+	var P, F;
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	P = ToString(prop);
+	F = Get(obj, P);
+	return Call(F, obj, args);
+}
+
+function CallOwnMethod(obj, prop, args) {
+	var P;
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	P = ToString(prop);
+	if (!hasOwn(obj, P))
+		throw new TypeError('Object has no method "' + P + '"');
+	return CallMethod(obj, P, args);
+}
+
+function Bind(obj, receiver) {
+	var f = GetFunction(obj),
+		bound;
+	if (arguments.length == 1)
+	 	bound = lazyBind(f);
+	else
+		bound = lazyBind(f, receiver);
+	return CreateFunction(FunctionProto, bound, f.length + 1);
+}

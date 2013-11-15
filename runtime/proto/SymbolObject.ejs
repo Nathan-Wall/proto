@@ -1,0 +1,101 @@
+function CreateSymbol(proto) {
+	if (proto === undefined)
+		proto = SymbolProto;
+	var obj = CreateObject(proto);
+	SymbolInit(obj);
+	return obj;
+}
+
+function SymbolInit(obj) {
+	if (!IsWrapper(obj))
+		throw new TypeError('Object expected');
+	obj.Id = '_' + identifiers.next();
+}
+
+function CreateSymbolPrimitive() {
+	var prim = CreatePrimitiveWrapper(SymbolProto);
+	SymbolInit(prim);
+	prim.Type = 'symbol';
+	return prim;
+}
+
+SymbolProto.Get = function Get(obj, receiver) {
+	// TODO: receiver
+	if (!IsWrapper(this))
+		throw new TypeError('Object expected');
+	if (!IsWrapper(obj))
+		throw new TypeError('Object expected');
+	if (!('Id' in this))
+		throw new TypeError('Symbol expected');
+	return obj[this.Id];
+};
+SymbolProto.GetOwn = function GetOwn(obj, receiver) {
+	// TODO: receiver
+	if (!IsWrapper(this))
+		throw new TypeError('Object expected');
+	if (!IsWrapper(obj))
+		throw new TypeError('Object expected');
+	if (!('Id' in this))
+		throw new TypeError('Symbol expected');
+	if (hasOwn(obj[this.Id]))
+		return obj[this.Id];
+	return undefined;
+};
+
+// TODO: reflect.define should support symbols
+SymbolProto.Set = function Set(obj, value, receiver) {
+	// TODO: receiver
+	if (!IsWrapper(this))
+		throw new TypeError('Object expected');
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	obj[this.Id] = value;
+};
+SymbolProto.SetOwn = function SetOwn(obj, value, receiver) {
+	// TODO: receiver
+	var K;
+	if (!IsWrapper(this))
+		throw new TypeError('Object expected');
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	K = this.Id;
+	if (!(K in obj) || hasOwn(obj, K))
+		return obj[K] = value;
+	define(obj, K, {
+		value: value,
+		enumerable: true,
+		writable: true,
+		configurable: true
+	});
+};
+
+SymbolProto.Has = function Has(obj) {
+	var K;
+	if (!IsWrapper(this))
+		throw new TypeError('Object expected');
+	if (!IsObject(obj))
+		return false;
+	K = this.Id;
+	return K in obj;
+};
+
+SymbolProto.HasOwn = function HasOwn(obj) {
+	var K;
+	if (!IsWrapper(this))
+		throw new TypeError('Object expected');
+	if (!IsObject(obj))
+		return false;
+	K = this.Id;
+	return hasOwn(obj, K);
+};
+
+// TODO: Get this working
+SymbolProto.Delete = function Delete(obj) {
+	if (!IsWrapper(this))
+		throw new TypeError('Object expected');
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	if (!('Id' in this))
+		throw new TypeError('Symbol expected');
+	return delete obj[this.Id];
+};

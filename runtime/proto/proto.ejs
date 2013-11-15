@@ -1,0 +1,434 @@
+var proto = (function() {
+
+	<% include Identifiers %>
+
+	var Object = global.Object,
+		Number = global.Number,
+		String = global.String,
+		Error = global.Error,
+		TypeError = global.TypeError,
+		RangeError = global.RangeError,
+		Infinity = global.Infinity,
+
+		lazyBind = Function.prototype.bind.bind(Function.prototype.call),
+		lazyTie = Function.prototype.bind.bind(Function.prototype.apply),
+
+		create = Object.create,
+		getPrototypeOf = Object.getPrototypeOf,
+		freeze = Object.freeze,
+		keys = Object.keys,
+		defineProperty = Object.defineProperty,
+		getOwnPropertyNames = Object.getOwnPropertyNames,
+		getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor,
+		isArray = Array.isArray,
+
+		hasOwn = lazyBind(Object.prototype.hasOwnProperty),
+		apply = lazyBind(Function.prototype.apply),
+		bind = lazyBind(Function.prototype.bind),
+		join = lazyBind(Array.prototype.join),
+		push = lazyBind(Array.prototype.push),
+		pushAll = lazyTie(Array.prototype.push),
+		slice = lazyBind(Array.prototype.slice),
+		splice = lazyBind(Array.prototype.splice),
+
+		ObjectProto = CreateObject(null),
+		BooleanProto = CreateObject(ObjectProto),
+		NumberProto = CreateObject(ObjectProto),
+		StringProto = CreateObject(ObjectProto),
+		ArrayProto = CreateObject(ObjectProto),
+		FunctionProto = CreateObject(ObjectProto),
+		DateProto = CreateObject(ObjectProto),
+		RangeProto = CreateObject(ObjectProto),
+		PromiseProto = CreateObject(ObjectProto),
+		SymbolProto = CreateObject(ObjectProto),
+		reflect = CreateObject(ObjectProto),
+
+		I = function I(value) { return value; },
+
+		identifiers = new Identifiers();
+
+	// TODO: Make an extension so that objects can specify how they coerce to
+	// numbers.
+	function ToNumber(value) {
+		if (value === null || value === undefined)
+			return 0;
+		if (IsObject(value))
+			return NaN;
+		return Number(value);
+	}
+
+	// TODO: Make an extension so that objects can specify how they coerce to
+	// strings.
+	function ToString(value) {
+		if (value === null || value === undefined)
+			return '';
+		if (IsObject(value))
+			return '[Object]';
+		return String(value);
+	}
+
+	// TODO: Probably replace with ToIterable once iterables are worked out
+	function ToArray(value) {
+		if (!IsObject(value))
+			throw new TypeError('Object expected');
+		if (IsLike(value, ArrayProto))
+			return value;
+		var r = create(null);
+		r.length = 0;
+		if (('From' in value) && ('To' in value)) {
+			if (value.From === Infinity || value.From === -Infinity
+			|| value.To === Infinity || value.To === -Infinity)
+				throw new RangeError('Infinite range');
+			if (value.From < value.To)
+				for (var i = value.From; i < value.To; i++)
+					push(r, i);
+			else
+				for (var i = value.From; i > value.To; i--)
+					push(r, i);				
+			return CreateArray(undefined, r);
+		}
+		throw new TypeError('Object is not iterable');
+	}
+
+	function ToType(value) {
+		if (value === null || value === undefined)
+			return 'nil';
+		if (value.Primitive)
+			return value.Type;
+		// Note that since functions are wrapped, the return value should be
+		// "object".
+		return typeof value;
+	}
+
+	function arrayMerge(/* ...arrays */) {
+		var r = create(null);
+		r.length = 0;
+		for (var i = 0, arg; i < arguments.length; i++) {
+			arg = arguments[i];
+			if (isArray(arg))
+				pushAll(r, arg);
+			else
+				pushAll(r, arg.Value);
+		}
+		return slice(r);
+	}
+
+	function arraySlice(array, from, to) {
+		return slice(array, from, to);
+	}
+
+	// TODO: This may not be being used...
+	function own(obj) {
+		if (Object(obj) !== obj)
+			throw new TypeError('Object expected');
+		var O = create(null),
+			keys = getOwnPropertyNames(obj);
+		for (var i = 0, key; i < keys.length; i++) {
+			key = keys[i];
+			define(O, key, getOwnPropertyDescriptor(obj, key));
+		}
+		return O;
+	}
+
+	function proxyJs(value) {
+		if (Object(value) !== value)
+			return value;
+		var p = CreateObject(null);
+		// TODO: How will this work with inheritance?
+		p.ProxyJs = true;
+		p.Value = value;
+		if (typeof value == 'function')
+			p.Function = function() {
+				var receiver = this,
+					args = create(null);
+				args.length = 0;
+				if (IsObject(receiver))
+					receiver = receiver.Value;
+				for (var i = 0, arg; i < arguments.length; i++) {
+					arg = arguments[i];
+					if (IsWrapper(arg)) {
+						if (arg.ProxyJs)
+							arg = UnproxyJs(arg);
+						else
+							arg = UnwrapProto(arg);
+					}
+					push(args, arg);
+				}
+				return proxyJs(apply(value, receiver, args));
+			};
+		return p;
+	}
+
+	function UnproxyJs(value) {
+		if (IsObject(value))
+			return value.Value;
+		return value;
+	}
+
+	// TODO: Some work will probably need to be done on this for functions...
+	function UnwrapProto(value) {
+		var res, V, ks;
+		if (!IsWrapper(value))
+			return value;
+		// primitive extensions, like symbols, can't be passed out of the system
+		if (value.Primitive)
+			return undefined;
+		V = value.Value;
+		res = create(UnwrapProto(getPrototypeOf(value)));
+		ks = keys(V);
+		for (var i = 0, k, d; i < ks.length; i++) {
+			k = ks[i];
+			d = getOwnPropertyDescriptor(V, k);
+			if (hasOwn(d, 'value'))
+				d.value = UnwrapProto(d.value);
+			if (hasOwn(d, 'get'))
+				d.get = UnproxyProtoFunction(d.get);
+			if (hasOwn(d, 'set'))
+				d.set = UnproxyProtoFunction(d.set);
+			define(res, k, d);
+		}
+		return res;
+	}
+
+	// TODO: Copy properties from the __ProtoFunction__?
+	function UnproxyProtoFunction(F) {
+		return function() {
+			var args = create(null);
+			args.length = 0;
+			for (var i = 0; i < arguments.length; i++)
+				args[i] = proxyJs(arguments[i]);
+			apply(F, proxyJs(this), args);
+		};
+	}
+
+	// TODO: If Define exists, it should probably operate on a wrapped desc. ??
+	// function Define(obj, key, desc) {
+	// 	if (!IsObject(obj))
+	// 		throw new TypeError('Object expected');
+	// 	define(obj.Value, key desc);
+	// 	return obj;
+	// }
+
+	function define(obj, name, desc) {
+		if ('value' in desc && !hasOwn(desc, 'value')
+			|| 'get' in desc && !hasOwn(desc, 'get')
+			|| 'set' in desc && !hasOwn(desc, 'set')
+			|| 'enumerable' in desc && !hasOwn(desc, 'enumerable')
+			|| 'writable' in desc && !hasOwn(desc, 'writable')
+			|| 'configurable' in desc && !hasOwn(desc, 'configurable'))
+			desc = createSafeDescriptor(desc);
+		return defineProperty(obj, name, desc);
+	}
+
+	function createSafeDescriptor(obj) {
+		if (obj == null) {
+			locked = true;
+			throw new TypeError('Argument cannot be null or undefined.');
+		}
+		obj = Object(obj);
+		var O = create(null),
+			k = keys(obj);
+		for (var i = 0, key = k[i]; key = k[i], i < k.length; i++)
+			O[key] = obj[key];
+		return O;
+	}
+
+	function getPropertyDescriptor(obj, key) {
+		var desc, K;
+		if (Object(obj) !== obj)
+			throw new TypeError('Object expected');
+		K = String(key);
+		do {
+			desc = getOwnPropertyDescriptor(obj, K);
+		} while (desc === undefined && (obj = getPrototypeOf(obj)));
+		return desc;
+	}
+
+	function __convertFunctions__(obj) {
+		var ret = CreateObject(null),
+			K = keys(obj);
+		for (var i = 0, k; i < K.length; i++) {
+			k = K[i];
+			if (typeof obj[k] == 'function')
+				ret.Value[k] = CreateFunction(FunctionProto, obj[k]);
+		}
+		return ret;
+	}
+
+	// TODO: This currently isn't being used. Remove it?
+	//
+	// Creates a wrapper function with the same length as the original.
+	// Arity is preserved (`length`) but the function's `name` is lost. It is
+	// possible to preserve the name, but it requires use of `eval` on each
+	// wrapping.  This implementation only requires `eval` for creating the
+	// generator, and should be much more performant than one that would
+	// preserve the name.  Preserving `length` is considered more important
+	// than preserving `name` because `length` is known to be used by higher-
+	// order functions (i.e. in mocha).  Nothing utilizing `name` for purposes
+	// other than debugging is known.
+	var createWrapper = (function() {
+
+		// Let's memoize wrapper generators to avoid using eval too often.
+		var generators = create(null),
+
+			numGenerators = 0,
+
+			// Let's limit length to 512 for now. If someone wants to up it,
+			// they can.
+			MAX_WRAPPER_LENGTH = 512,
+
+			// Limit the number of generators which are cached to preserve
+			// memory in the unusual case that someone creates many generators.
+			// We don't go to lengths to make the cache drop old, unused values
+			// as there really shouldn't be a need for so many generators in the
+			// first place.
+			MAX_CACHED_GENERATORS = 64,
+
+
+		 	// We want to use indirect eval so that implementations can take
+		 	// advantage of memory & performance enhancements which are possible
+		 	// without direct eval.
+			_eval = eval;
+
+		return function createWrapper(/* original, length, f */$0, $1) {
+
+			var original = arguments[0];
+
+			if (typeof original != 'function')
+				throw new TypeError('Function expected: ' + original);
+
+			var length, f;
+
+			if (typeof arguments[2] != 'undefined')
+				length = arguments[1];
+			else
+				length = original.length;
+
+			if (typeof arguments[2] != 'undefined')
+				f = arguments[2];
+			else
+				f = arguments[1];
+
+			if (length < 0)
+				length = 0;
+			length = length >>> 0;
+			if (length > MAX_WRAPPER_LENGTH)
+				throw new Error(
+					'Maximum length allowed is '
+					+ MAX_WRAPPER_LENGTH + ': ' + length
+				);
+
+			var args = create(null),
+				generator = generators[length];
+
+			args.length = 0;
+
+			if (typeof f != 'function')
+				throw new TypeError('Function expected: ' + f);
+
+			if (!generator) {
+
+				for (var i = 0; i < length; i++)
+					push(args, '$' + i);
+
+				generator = _eval(
+					'(function(wrapF, original, apply) {'
+						+ '"use strict";'
+						+ 'var wrapper = function(' + join(args, ',') + ') {'
+							+ 'return apply(wrapF, this, arguments);'
+						+ '};'
+						// TODO: Come up with a good way to keep up with the
+						// original?
+						//+ 'wrapper.original = original;'
+						+ 'return wrapper;'
+					+ '})'
+				);
+
+				if (numGenerators < MAX_CACHED_GENERATORS) {
+					generators[length] = generator;
+					numGenerators++;
+				}
+
+			}
+
+			return generator(f, original, apply, _eval);
+
+		};
+
+	})();
+
+	<% include Reflect %>
+	<% include FunctionObject %>
+	<% include ArrayObject %>
+	<% include RangeObject %>
+	<% include SymbolObject %>
+
+	return freeze({
+
+		Object: ObjectProto,
+		Boolean: BooleanProto,
+		Number: NumberProto,
+		String: StringProto,
+		Array: ArrayProto,
+		Function: FunctionProto,
+		Date: DateProto,
+		Range: RangeProto,
+		Symbol: SymbolProto,
+		reflect: reflect,
+
+		ToNumber: ToNumber,
+		ToString: ToString,
+		ToArray: ToArray,
+		ToType: ToType,
+
+		CreateObject: CreateObject,
+		CreateArray: CreateArray,
+		CreateFunction: CreateFunction,
+		CreateRange: CreateRange,
+		CreateSymbol: CreateSymbol,
+		CreateSymbolPrimitive: CreateSymbolPrimitive,
+		SymbolInit: SymbolInit,
+
+		Like: Like,
+		IsLike: IsLike,
+		New: New,
+		Mixin: Mixin,
+
+		bind: bind,
+		Bind: Bind,
+		arrayMerge: arrayMerge,
+		arraySlice: arraySlice,
+		CheckSpread: CheckSpread,
+
+		GetPrototype: GetPrototype,
+		Own: Own,
+
+		Has: Has,
+		HasOwn: HasOwn,
+		Get: Get,
+		GetOwn: GetOwn,
+		Set: Set,
+		SetOwn: SetOwn,
+		Delete: Delete,
+		Call: Call,
+		CallMethod: CallMethod,
+		CallOwnMethod: CallOwnMethod,
+
+		IsObject: IsObject,
+		IsCallable: IsCallable,
+		GetOwnKeys: GetOwnKeys,
+
+		Slice: Slice,
+		SliceOwn: SliceOwn,
+
+		proxyJs: proxyJs,
+
+		Infinity: Infinity,
+
+		toWrapped: function toWrapped() {
+			return Freeze(__convertFunctions__(this));
+		}
+
+	});
+
+})();

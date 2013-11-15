@@ -203,6 +203,16 @@ foo#bar = value;
 </tr>
 
 <tr>
+<td>has own</td>
+<td><div class="highlight highlight-js"><pre>
+foo.hasOwnProperty('bar')
+</pre></div></td>
+<td><div class="highlight"><pre>
+'bar' in #foo;
+</pre></div></td>
+</tr>
+
+<tr>
 <td>checking properties</td>
 <td><div class="highlight highlight-js"><pre>
 var baz;

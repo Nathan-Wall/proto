@@ -1,0 +1,32 @@
+function CreateRange(proto, from, to) {
+	if (proto === undefined)
+		proto = RangeProto;
+	var obj = CreateObject(proto);
+	from = ToNumber(from);
+	if (from !== from)
+		throw new RangeError('Invalid range bounds');
+	to = ToNumber(to);
+	if (to !== to)
+		throw new RangeError('Invalid range bounds');
+	obj.From = from;
+	obj.To = to;
+	return obj;
+}
+
+RangeProto.Get = function Get(obj, receiver) {
+	if (!IsObject(this))
+		throw new TypeError('Object expected');
+	if (!('From' in this) || !('To' in this))
+		throw new TypeError('Symbol expected');
+	return Slice(obj, this.From, this.To, receiver);
+};
+RangeProto.GetOwn = function GetOwn(obj, receiver) {
+	return SliceOwn(obj, this.From, this.To, receiver);
+};
+
+RangeProto.Set = function Set(obj, value, receiver) {
+	// TODO
+};
+RangeProto.SetOwn = function SetOwn(obj, value, receiver) {
+	// TODO
+};
