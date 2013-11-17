@@ -1,0 +1,3 @@
+[submodule "lib/regenerator"]
+	path = lib/regenerator
+	url = git@github.com:Nathan-Wall/regenerator.git

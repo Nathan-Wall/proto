@@ -1,0 +1,12 @@
+function CreateGenerator(proto, regeneratorFn) {
+	// TODO: This is probably not the best way to do this.. would probably be
+	// best to rewrite/modify the regenerator runtime to produce a proper proto
+	// object.
+	return proxyJs(regeneratorFn);
+
+	if (proto === undefined)
+		proto = GeneratorProto;
+	var obj = CreateObject(proto);
+	FunctionInit(obj, regeneratorFn, regeneratorFn.length);
+	return obj;
+}

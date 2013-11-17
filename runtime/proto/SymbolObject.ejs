@@ -1,4 +1,5 @@
 function CreateSymbol(proto) {
+	// TODO: This is unused. Can it be removed?
 	if (proto === undefined)
 		proto = SymbolProto;
 	var obj = CreateObject(proto);
@@ -6,16 +7,26 @@ function CreateSymbol(proto) {
 	return obj;
 }
 
-function SymbolInit(obj) {
+function SymbolInit(obj, value, id) {
 	if (!IsWrapper(obj))
 		throw new TypeError('Object expected');
-	obj.Id = '_' + identifiers.next();
+	if (id !== undefined)
+		obj.Id = String(id);
+	else if (value === undefined)
+		obj.Id = '_' + identifiers.next();
+	else if (IsWrapper(value) && 'Id' in value)
+		obj.Id = value.Id;
+	else
+		throw new TypeError('Value is not a symbol');
 }
 
-function CreateSymbolPrimitive() {
+function CreateSymbolPrimitive(stringValue, id) {
+	if (typeof stringValue != 'string')
+		throw new Error('String expected');
 	var prim = CreatePrimitiveWrapper(SymbolProto);
-	SymbolInit(prim);
+	SymbolInit(prim, undefined, id);
 	prim.Type = 'symbol';
+	prim.ToString = stringValue;
 	return prim;
 }
 

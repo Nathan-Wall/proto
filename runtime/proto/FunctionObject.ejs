@@ -1,13 +1,18 @@
 function CreateFunction(proto, jsfn, length) {
 	if (proto === undefined)
 		proto = FunctionProto;
+	var obj = CreateObject(proto);
+	FunctionInit(obj, jsfn, length);
+	return obj;
+}
+
+function FunctionInit(obj, jsfn, length) {
 	if (typeof jsfn != 'function')
 		throw new TypeError('Function expected');
 	if (length === undefined)
 		length = jsfn.length;
 	else
 		length = ToNumber(length) >>> 0;
-	var obj = CreateObject(proto);
 	obj.Function = jsfn;
 	define(obj.Value, 'length', {
 		value: length,
@@ -15,7 +20,6 @@ function CreateFunction(proto, jsfn, length) {
 		enumerable: false,
 		configurable: true
 	});
-	return obj;
 }
 
 function IsCallable(value) {

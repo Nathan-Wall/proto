@@ -41,6 +41,7 @@ var proto = (function() {
 		RangeProto = CreateObject(ObjectProto),
 		PromiseProto = CreateObject(ObjectProto),
 		SymbolProto = CreateObject(ObjectProto),
+		GeneratorProto = CreateObject(ObjectProto),
 		reflect = CreateObject(ObjectProto),
 
 		I = function I(value) { return value; },
@@ -52,7 +53,7 @@ var proto = (function() {
 	function ToNumber(value) {
 		if (value === null || value === undefined)
 			return 0;
-		if (IsObject(value))
+		if (IsWrapper(value))
 			return NaN;
 		return Number(value);
 	}
@@ -60,8 +61,18 @@ var proto = (function() {
 	// TODO: Make an extension so that objects can specify how they coerce to
 	// strings.
 	function ToString(value) {
+		var toString;
 		if (value === null || value === undefined)
 			return '';
+		if (IsWrapper(value) && ('ToString' in value)) {
+			toString = value.ToString;
+			if (typeof toString == 'string')
+				return toString;
+			else if (typeof toString == 'function')
+				return toString();
+			else
+				throw new TypeError('Expected string or function');
+		}
 		if (IsObject(value))
 			return '[Object]';
 		return String(value);
@@ -362,6 +373,7 @@ var proto = (function() {
 	<% include ArrayObject %>
 	<% include RangeObject %>
 	<% include SymbolObject %>
+	<% include GeneratorObject %>
 
 	return freeze({
 
@@ -388,6 +400,7 @@ var proto = (function() {
 		CreateSymbol: CreateSymbol,
 		CreateSymbolPrimitive: CreateSymbolPrimitive,
 		SymbolInit: SymbolInit,
+		CreateGenerator: CreateGenerator,
 
 		Like: Like,
 		IsLike: IsLike,
@@ -424,6 +437,9 @@ var proto = (function() {
 		proxyJs: proxyJs,
 
 		Infinity: Infinity,
+		$ToString: CreateSymbolPrimitive('@toString', 'ToString'),
+		$Get: CreateSymbolPrimitive('@get', 'Get'),
+		// ... TODO: Do others
 
 		toWrapped: function toWrapped() {
 			return Freeze(__convertFunctions__(this));

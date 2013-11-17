@@ -221,7 +221,7 @@ if (item &amp;&amp; item.foo &amp;&amp; item.foo.bar)
 	baz = item.foo.bar.baz;
 </pre></div></td>
 <td><div class="highlight"><pre>
-var baz = item.foo.bar.baz;
+var baz = getItem().foo.bar.baz;
 </pre></div></td>
 </tr>
 
@@ -231,11 +231,13 @@ var baz = item.foo.bar.baz;
 print(a &amp; b);
 print(c | d);
 print(e ^ f);
+print(~g);
 </pre></div></td>
 <td><div class="highlight"><pre>
 print(a and b);
 print(c or d);
 print(e xor f);
+print(not g);
 </pre></div></td>
 </tr>
 
