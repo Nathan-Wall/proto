@@ -2,10 +2,6 @@
 
 	'use strict';
 
-	(function() {
-		<%- extraRuntimes %>
-	})();
-
 	var $__proto__$ = (function() {
 
 		<% include simile %>
@@ -18,7 +14,8 @@
 	(function() {
 
 		var Object, Boolean, Number, String, Array, Function, Range, Symbol,
-			reflect, boolean, number, int, uint, string, function_, inf;
+			Generator, reflect, boolean, number, int, uint, string, function_,
+			inf;
 
 		(function() {
 
@@ -30,6 +27,7 @@
 			Function = $__proto__$.Function;
 			Range = $__proto__$.Range;
 			Symbol = $__proto__$.Symbol;
+			Generator = $__proto__$.Generator;
 			reflect = $__proto__$.reflect;
 			inf = $__proto__$.Infinity;
 

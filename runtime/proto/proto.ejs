@@ -23,11 +23,13 @@ var proto = (function() {
 		isArray = Array.isArray,
 
 		hasOwn = lazyBind(Object.prototype.hasOwnProperty),
+		call = lazyBind(Function.prototype.call),
 		apply = lazyBind(Function.prototype.apply),
 		bind = lazyBind(Function.prototype.bind),
 		join = lazyBind(Array.prototype.join),
 		push = lazyBind(Array.prototype.push),
 		pushAll = lazyTie(Array.prototype.push),
+		pop = lazyBind(Array.prototype.pop),
 		slice = lazyBind(Array.prototype.slice),
 		splice = lazyBind(Array.prototype.splice),
 
@@ -386,6 +388,7 @@ var proto = (function() {
 		Date: DateProto,
 		Range: RangeProto,
 		Symbol: SymbolProto,
+		Generator: GeneratorProto,
 		reflect: reflect,
 
 		ToNumber: ToNumber,
@@ -400,7 +403,10 @@ var proto = (function() {
 		CreateSymbol: CreateSymbol,
 		CreateSymbolPrimitive: CreateSymbolPrimitive,
 		SymbolInit: SymbolInit,
-		CreateGenerator: CreateGenerator,
+		CreateGeneratorPrototype: CreateGeneratorPrototype,
+		GeneratorInit: GeneratorInit,
+		GeneratorNext: GeneratorNext,
+		GeneratorThrow: GeneratorThrow,
 
 		Like: Like,
 		IsLike: IsLike,

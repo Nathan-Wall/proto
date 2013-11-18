@@ -1,3 +1,4 @@
-[submodule "lib/regenerator"]
-	path = lib/regenerator
-	url = git@github.com:Nathan-Wall/regenerator.git
+
+[submodule "lib/progenerator"]
+	path = lib/progenerator
+	url = git@github.com:Nathan-Wall/progenerator.git

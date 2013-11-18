@@ -1,0 +1,16 @@
+Generator := {
+
+	// TODO: Each generator's init should probably adjust it's arity
+	init(...args) :{
+		P.GeneratorInit(this, args);
+	},
+
+	next(value) :{
+		return P.GeneratorNext(this, value);
+	},
+
+	throw(exception) :{
+		return P.GeneratorThrow(this, exception);
+	}
+
+};
