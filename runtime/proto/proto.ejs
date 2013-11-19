@@ -186,6 +186,8 @@ var proto = (function() {
 		// primitive extensions, like symbols, can't be passed out of the system
 		if (value.Primitive)
 			return undefined;
+		if ('Function' in value)
+			return value.Function;
 		V = value.Value;
 		res = create(UnwrapProto(getPrototypeOf(value)));
 		ks = keys(V);
@@ -266,6 +268,20 @@ var proto = (function() {
 				ret.Value[k] = CreateFunction(FunctionProto, obj[k]);
 		}
 		return ret;
+	}
+
+	function SetTimeout(f, interval) {
+		if (!IsCallable(f))
+			throw new TypeError('Function expected');
+		interval = ToNumber(interval) >>> 0;
+		// TODO: Cancel mechanism
+		// TODO: Override existing setTimeout (and/or clearTimeout?) to
+		// guarantee integrity.
+		setTimeout(f.Function, interval);
+	}
+
+	function SetInterval(f, interval) {
+		// TODO
 	}
 
 	// TODO: This currently isn't being used. Remove it?
@@ -376,6 +392,8 @@ var proto = (function() {
 	<% include RangeObject %>
 	<% include SymbolObject %>
 	<% include GeneratorObject %>
+	<% include AsyncFunction %>
+	<% include PromiseObject %>
 
 	return freeze({
 
@@ -389,6 +407,7 @@ var proto = (function() {
 		Range: RangeProto,
 		Symbol: SymbolProto,
 		Generator: GeneratorProto,
+		Promise: PromiseProto,
 		reflect: reflect,
 
 		ToNumber: ToNumber,
@@ -403,10 +422,13 @@ var proto = (function() {
 		CreateSymbol: CreateSymbol,
 		CreateSymbolPrimitive: CreateSymbolPrimitive,
 		SymbolInit: SymbolInit,
-		CreateGeneratorPrototype: CreateGeneratorPrototype,
+		CreateGeneratorFunction: CreateGeneratorFunction,
 		GeneratorInit: GeneratorInit,
 		GeneratorNext: GeneratorNext,
 		GeneratorThrow: GeneratorThrow,
+		PromiseInit: PromiseInit,
+		PromiseThen: PromiseThen,
+		CreateAsyncFunction: CreateAsyncFunction,
 
 		Like: Like,
 		IsLike: IsLike,
@@ -439,6 +461,9 @@ var proto = (function() {
 
 		Slice: Slice,
 		SliceOwn: SliceOwn,
+
+		SetTimeout: SetTimeout,
+		SetInterval: SetInterval,
 
 		proxyJs: proxyJs,
 

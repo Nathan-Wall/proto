@@ -1,0 +1,15 @@
+fn init(resolver) :{
+	P.PromiseInit(this, resolver);
+}
+
+fn then(onFulfilled, onRejected) :{
+	return P.PromiseThen(this, onFulfilled, onRejected);
+}
+
+fn catch_(onRejected) :{
+	return P.PromiseThen(this, undefined, onRejected);
+}
+
+Promise := {
+	init, then, catch: catch_
+};
