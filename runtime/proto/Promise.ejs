@@ -1,6 +1,8 @@
 // This is based on https://github.com/domenic/promises-unwrapping
 // commit ab245ff421075c6d8351a26c0f8b9e791bc7c76c
 
+// TODO: Is ReturnIfAbrupt supposed to throw or ignore an exception?
+
 function CastToPromise(P, x) {
 	var proto, deferred;
 	if (IsPromise(x)) {
@@ -59,6 +61,7 @@ function PromiseReject(promise, reason) {
 }
 
 function PromiseResolve(promise, resolution) {
+	if (resolution === 523) debugger;
 	var reactions;
 	if (promise.PromiseStatus !== 'unresolved')
 		return;
@@ -94,21 +97,16 @@ function CreatePromiseAllCountdownFunction() {
 			values = F.Values,
 			deferred = F.Deferred,
 			countdownHolder = F.CountdownHolder;
-		try {
-			define(values, index, {
-				value: x,
-				writable: true,
-				enumerable: true,
-				configurable: true
-			});
-		} catch (e) {
-			Call(deferred.Reject, undefined, [ proxyJs(e) ]);
-			return deferred.Promise;
-		}
+		values[index] = x;
+		if (values.length < index + 1)
+			values.length = index + 1;
 		countdownHolder.Countdown--;
-		if (countdownHolder.Countdown === 0)
-			Call(deferred.Resolve, undefined, [ values ]);
+		if (countdownHolder.Countdown == 0)
+			return Call(deferred.Resolve, undefined, [
+				CreateArray(undefined, values)
+			]);
 	});
+	return F;
 }
 
 function CreatePromiseReactionFunction() {
@@ -178,6 +176,60 @@ function PromiseInit(promise, resolver) {
 	reject.Promise = promise;
 	try { Call(resolver, undefined, [ resolve, reject ]); }
 	catch (e) { PromiseReject(promise, proxyJs(e)); }
+}
+
+function PromiseAll(proto, iterable) {
+	var deferred = GetDeferred(proto),
+		iterator, values, index, next, nextPromise, countdownFunction, result,
+		countdownHolder, nextValue;
+	try { iterator = GetIterator(iterable); }
+	catch (e) {
+		PromiseReject(deferred.Promise, proxyJs(e));
+		return deferred.Promise;
+	}
+	values = create(null);
+	values.length = 0;
+	countdownHolder = { Countdown: 0 };
+	index = 0;
+	while (true) {
+		try { next = IteratorStep(iterator); }
+		catch (e) {
+			PromiseReject(deferred.Promise, proxyJs(e));
+			return deferred.Promise;
+		}
+		if (next === false) {
+			if (index == 0)
+				Call(deferred.Resolve, undefined, [
+					CreateArray(undefined, values)
+				]);
+			return deferred.Promise;
+		}
+		try { nextValue = IteratorValue(next); }
+		catch (e) {
+			PromiseReject(deferred.Promise, proxyJs(e));
+			return deferred.Promise;
+		}
+		try { nextPromise = CastToPromise(proto, nextValue); }
+		catch (e) {
+			PromiseReject(deferred.Promise, proxyJs(e));
+			return deferred.Promise;
+		}
+		countdownFunction = CreatePromiseAllCountdownFunction();
+		countdownFunction.Index = index;
+		countdownFunction.Values = values;
+		countdownFunction.Deferred = deferred;
+		countdownFunction.CountdownHolder = countdownHolder;
+		try {
+			result = PromiseThen(
+				nextPromise, countdownFunction, deferred.Reject
+			);
+		} catch (e) {
+			PromiseReject(deferred.Promise, proxyJs(e));
+			return deferred.Promise;
+		}
+		index++;
+		countdownHolder.Countdown++;
+	}
 }
 
 function PromiseThen(promise, onFulfilled, onRejected) {

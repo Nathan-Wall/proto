@@ -16,6 +16,6 @@ fn append(...args) :{
 	return (...r) -> this(...r, ...args);
 }
 
-Function := {
+Function := #{
 	insert, prepend, append
 };

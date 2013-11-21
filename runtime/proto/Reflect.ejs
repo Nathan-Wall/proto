@@ -1,5 +1,5 @@
 // properties will always be a native JS object
-function CreateObject(proto, properties) {
+function CreateObject(proto, properties, staticProperties) {
 	var wrapper, protoValue;
 	if (proto === undefined)
 		proto = ObjectProto;
@@ -15,6 +15,11 @@ function CreateObject(proto, properties) {
 	}
 	wrapper = create(proto);
 	wrapper.Value = simile.like(protoValue, properties);
+	if (staticProperties !== undefined) {
+		if (Object(staticProperties) !== staticProperties)
+			throw new TypeError('Object expected');
+		wrapper.Static = own(staticProperties);
+	}
 	return wrapper;
 }
 
@@ -69,10 +74,20 @@ function Own(obj) {
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
 	var O = CreateObject(null),
-		keys = getOwnPropertyNames(obj.Value);
-	for (var i = 0, key; i < keys.length; i++) {
+		keys = getOwnPropertyNames(obj.Value),
+		i, key;
+	for (i = 0, key; i < keys.length; i++) {
 		key = keys[i];
 		define(O.Value, key, getOwnPropertyDescriptor(obj.Value, key));
+	}
+	if (hasOwn(obj, 'Static')) {
+		keys = getOwnPropertyNames(obj.Static);
+		if (!hasOwn(O, 'Static'))
+			O.Static = create(null);
+		for (i = 0, key; i < keys.length; i++) {
+			key = keys[i];
+			define(O.Static, key, getOwnPropertyDescriptor(obj.Static, key));
+		}
 	}
 	return O;
 }
@@ -90,7 +105,8 @@ function Has(obj, key) {
 			);
 	}
 	K = ToString(key);
-	return K in obj.Value;
+	return (K in obj.Value
+		|| hasOwn(obj, 'Static') && hasOwn(obj.Static, key));
 }
 
 function HasOwn(obj, key) {
@@ -106,11 +122,14 @@ function HasOwn(obj, key) {
 			);
 	}
 	K = ToString(key);
-	return hasOwn(obj.Value, K);
+	return (hasOwn(obj.Value, K)
+		|| hasOwn(obj, 'Static') && hasOwn(obj.Static, key));
 }
 
+// TODO: Uses of `someObj.Value.someKey` in other functions should probably
+// be changed to use `Get`, especially considering static properties.
 function Get(obj, key, receiver) {
-	var desc, get, GetF, proto, K, T;
+	var desc, get, GetF, proto, K, T, O;
 	if (obj === null || obj === undefined)
 		return undefined;
 	if (receiver === null)
@@ -125,14 +144,18 @@ function Get(obj, key, receiver) {
 	}
 	K = ToString(key);
 	if (IsWrapper(obj)) {
+		if (hasOwn(obj, 'Static') && hasOwn(obj.Static, K))
+			O = obj.Static;
+		else
+			O = obj.Value;
 		if (receiver === undefined) {
 			if ('ProxyJs' in obj)
-				return proxyJs(obj.Value[K]);
+				return proxyJs(O[K]);
 			else
-				return obj.Value[K];
+				return O[K];
 		}
 		else {
-			desc = getPropertyDescriptor(obj.Value, K);
+			desc = getPropertyDescriptor(O, K);
 			if (desc == null)
 				return undefined;
 			else if (hasOwn(desc, 'get')) {
@@ -169,7 +192,7 @@ function Get(obj, key, receiver) {
 	if (receiver === undefined)
 		receiver = obj;
 	desc = GetDescriptor(proto, K);
-	if (desc === undefined)
+	if (desc === undefined || desc.static)
 		return undefined;
 	if (hasOwn(desc, 'get')) {
 		get = desc.get;
@@ -178,7 +201,7 @@ function Get(obj, key, receiver) {
 		return Call(get, receiver, [ ]);
 	}
 	else if (hasOwn(desc, 'value'))
-		return desc.Value;
+		return desc.value;
 	else
 		return undefined;
 }
@@ -196,13 +219,13 @@ function GetOwn(obj, key, receiver) {
 			);
 	}
 	K = ToString(key);
-	if (hasOwn(obj.Value, K))
+	if (hasOwn(obj.Value, K) || hasOwn(obj, 'Static') && hasOwn(obj.Static, K))
 		return Get(obj, K, receiver);
 	return undefined;
 }
 
 function Set(obj, key, value, receiver) {
-	var desc, set, SetF, K, R, handle = I;
+	var desc, set, SetF, K, R, handle = I, O;
 	if (obj === null || obj === undefined)
 		throw new TypeError('Cannot set property of nil');
 	if (!IsObject(obj))
@@ -222,16 +245,24 @@ function Set(obj, key, value, receiver) {
 			);
 	}
 	K = ToString(key);
+	if (hasOwn(obj, 'Static') && hasOwn(obj.Static, K))
+		O = obj.Static;
+	else
+		O = obj.Value;
 	if (receiver === null || receiver === undefined) {
-		return obj.Value[K] = handle(value);
+		O[K] = handle(value);
+		return value;
 	}
-	desc = getPropertyDescriptor(obj.Value, K);
-	if (desc == null)
-		return obj.Value[K] = handle(value);
+	desc = getPropertyDescriptor(O, K);
+	if (desc == null) {
+		O[K] = handle(value);
+		return value;
+	}
 	else if (hasOwn(desc, 'set')) {
 		if (obj.ProxyJs) {
 			SetF = CreateFunction(null, set);
-			return UnwrapProto(Call(SetF, receiver, [ value ]));
+			UnwrapProto(Call(SetF, receiver, [ value ]));
+			return  value;
 		}
 		else {
 			set = desc.set;
@@ -240,11 +271,14 @@ function Set(obj, key, value, receiver) {
 			SetF = set.__ProtoFunction__;
 			if (typeof SetF != 'function')
 				throw new TypeError('Function expected');
-			return Call(SetF, receiver, [ value ]);
+			Call(SetF, receiver, [ value ]);
+			return value;
 		}
 	}
-	else if (hasOwn(desc, 'value'))
-		return obj.Value[K] = handle(value);
+	else if (hasOwn(desc, 'value')) {
+		O[K] = handle(value);
+		return value;
+	}
 	else
 		throw new TypeError(
 			'Object has a getter without a setter for property "'
@@ -270,8 +304,12 @@ function SetOwn(obj, key, value, receiver) {
 			);
 	}
 	K = ToString(key);
-	if (!(K in obj.Value) || hasOwn(obj.Value, K))
-		return Set(obj, K, value, receiver);
+	if (!(K in obj.Value) || hasOwn(obj.Value, K)
+	|| hasOwn(obj, 'Static') && hasOwn(obj.Static, K)) {
+		Set(obj, K, value, receiver);
+		return value;
+	}
+	// TODO: Make Reflect.define capable of defining static properties
 	define(obj.Value, K, {
 		value: value,
 		// Leaving enumerable on here to keep foo#bar = 5 consistent with
@@ -284,7 +322,7 @@ function SetOwn(obj, key, value, receiver) {
 }
 
 function Delete(obj, key) {
-	var K;
+	var K, O;
 	if (obj === null || obj === undefined)
 		throw new TypeError('Cannot delete property of nil');
 	if (!IsObject(obj))
@@ -299,29 +337,44 @@ function Delete(obj, key) {
 			);
 	}
 	K = ToString(key);
-	return delete obj.Value[K];
+	if (hasOwn(obj, 'Static') && hasOwn(obj.Static, K))
+		O = obj.Static;
+	else
+		O = obj.Value;
+	return delete O[K];
 }
 
 function GetOwnKeys(obj) {
+	var keys;
 	if (obj === undefined || obj === null || !IsObject(obj))
 		return CreateArray(ArrayProto);
-	return CreateArray(ArrayProto, getOwnPropertyNames(obj.Value));
+	keys = getOwnPropertyNames(obj.Value);
+	if (hasOwn(obj, 'Static'))
+		pushAll(keys, getOwnPropertyNames(obj.Static));
+	return CreateArray(ArrayProto, keys);
 }
 
 function Freeze(obj) {
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
 	freeze(obj.Value);
+	if (hasOwn(obj, 'Static'))
+		freeze(obj.Static);
 	return obj;
 }
 
 function GetDescriptor(obj, key) {
+	var O, isStatic = false;
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
 	key = ToString(key);
-	if (!(key in obj.Value))
-		return undefined;
-	var desc = getPropertyDescriptor(obj.Value, key),
+	if (hasOwn(obj, 'Static') && hasOwn(obj.Static, key)) {
+		isStatic = true;
+		O = obj.Static;
+	}
+	else if (key in obj.Value)
+		O = obj.Value;
+	var desc = getPropertyDescriptor(O, key),
 		K = keys(desc),
 		d = create(null);
 	for (var i = 0, k; i < K.length; i++) {
@@ -331,6 +384,7 @@ function GetDescriptor(obj, key) {
 		else
 			d[k] = desc[k];
 	}
+	d.static = isStatic;
 	return CreateObject(null, d);
 }
 
@@ -338,7 +392,8 @@ function GetOwnDescriptor(obj, key) {
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
 	key = ToString(key);
-	if (hasOwn(obj.Value, key))
+	if (hasOwn(obj.Value, key)
+	|| hasOwn(obj, 'Static') && hasOwn(obj.Static, key))
 		return GetDescriptor(obj, key);
 	return undefined;
 }
@@ -355,7 +410,7 @@ function New(obj, args) {
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
 	var newObj = CreateObject(obj),
-		init = newObj.Value.init;
+		init = Get(newObj, 'init');
 	if (IsCallable(init))
 		Call(init, newObj, args);
 	return newObj;
@@ -370,6 +425,11 @@ function Mixin(to, from) {
 	if (!IsObject(from))
 		throw new TypeError('Object expected');
 	simile.mixin(to.Value, from.Value);
+	if (hasOwn(from, 'Static')) {
+		if (!hasOwn(to, 'Static'))
+			to.Static = create(null);
+		simile.mixin(to.Static, from.Static);
+	}
 	return to;
 }
 

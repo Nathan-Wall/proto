@@ -25,6 +25,10 @@ function = function(value) :{
 	return value;
 };
 
+object = object(value) :{
+	return P.ToObject(value);
+};
+
 setTimeout = setTimeout(f, interval) :{
 	// TODO: use coercives above
 	P.SetTimeout(f, interval);

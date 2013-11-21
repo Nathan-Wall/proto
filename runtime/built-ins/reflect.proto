@@ -45,7 +45,7 @@ fn isObject(value) :{
 	return P.IsObject(value);
 }
 
-reflect := {
+reflect := #{
 	getDescriptor, getOwnDescriptor, has, hasOwn, isCallable,
 	keys, ownKeys, isObject
 };

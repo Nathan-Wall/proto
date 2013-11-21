@@ -21,6 +21,9 @@ var proto = (function() {
 		getOwnPropertyNames = Object.getOwnPropertyNames,
 		getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor,
 		isArray = Array.isArray,
+		min = Math.min,
+		floor = Math.floor,
+		abs = Math.abs,
 
 		hasOwn = lazyBind(Object.prototype.hasOwnProperty),
 		call = lazyBind(Function.prototype.call),
@@ -32,6 +35,9 @@ var proto = (function() {
 		pop = lazyBind(Array.prototype.pop),
 		slice = lazyBind(Array.prototype.slice),
 		splice = lazyBind(Array.prototype.splice),
+		test = lazyBind(RegExp.prototype.test),
+
+		MAX_PRECISION = Math.pow(2, 53),
 
 		ObjectProto = CreateObject(null),
 		BooleanProto = CreateObject(ObjectProto),
@@ -49,36 +55,6 @@ var proto = (function() {
 		I = function I(value) { return value; },
 
 		identifiers = new Identifiers();
-
-	// TODO: Make an extension so that objects can specify how they coerce to
-	// numbers.
-	function ToNumber(value) {
-		if (value === null || value === undefined)
-			return 0;
-		if (IsWrapper(value))
-			return NaN;
-		return Number(value);
-	}
-
-	// TODO: Make an extension so that objects can specify how they coerce to
-	// strings.
-	function ToString(value) {
-		var toString;
-		if (value === null || value === undefined)
-			return '';
-		if (IsWrapper(value) && ('ToString' in value)) {
-			toString = value.ToString;
-			if (typeof toString == 'string')
-				return toString;
-			else if (typeof toString == 'function')
-				return toString();
-			else
-				throw new TypeError('Expected string or function');
-		}
-		if (IsObject(value))
-			return '[Object]';
-		return String(value);
-	}
 
 	// TODO: Probably replace with ToIterable once iterables are worked out
 	function ToArray(value) {
@@ -101,6 +77,26 @@ var proto = (function() {
 			return CreateArray(undefined, r);
 		}
 		throw new TypeError('Object is not iterable');
+	}
+
+	function ToObject(value) {
+		var type;
+		if (IsObject(value))
+			return value;
+		switch (type = ToType(value)) {
+			case 'nil':
+				return CreateObject(undefined);
+			case 'boolean':
+				return CreateBoolean(undefined, value);
+			case 'number':
+				return CreateNumber(undefined, value);
+			case 'string':
+				return CreateString(undefined, value);
+			case 'symbol':
+				return CreateSymbol(undefined, value);
+			default:
+				throw new TypeError('Unknown type "' + type + '"');
+		}
 	}
 
 	function ToType(value) {
@@ -190,7 +186,7 @@ var proto = (function() {
 			return value.Function;
 		V = value.Value;
 		res = create(UnwrapProto(getPrototypeOf(value)));
-		ks = keys(V);
+		ks = getOwnPropertyNames(V);
 		for (var i = 0, k, d; i < ks.length; i++) {
 			k = ks[i];
 			d = getOwnPropertyDescriptor(V, k);
@@ -261,7 +257,7 @@ var proto = (function() {
 
 	function __convertFunctions__(obj) {
 		var ret = CreateObject(null),
-			K = keys(obj);
+			K = getOwnPropertyNames(obj);
 		for (var i = 0, k; i < K.length; i++) {
 			k = K[i];
 			if (typeof obj[k] == 'function')
@@ -282,6 +278,13 @@ var proto = (function() {
 
 	function SetInterval(f, interval) {
 		// TODO
+	}
+
+	function NilCoalesce(left, right) {
+		var test = Call(left, undefined, [ ]);
+		if (test === undefined || test === null)
+			return Call(right, undefined, [ ]);
+		return test;
 	}
 
 	// TODO: This currently isn't being used. Remove it?
@@ -386,14 +389,18 @@ var proto = (function() {
 
 	})();
 
+	<% include Boolean %>
+	<% include Number %>
+	<% include String %>
 	<% include Reflect %>
-	<% include FunctionObject %>
-	<% include ArrayObject %>
-	<% include RangeObject %>
-	<% include SymbolObject %>
-	<% include GeneratorObject %>
-	<% include AsyncFunction %>
-	<% include PromiseObject %>
+	<% include Iterable %>
+	<% include Function %>
+	<% include Array %>
+	<% include Range %>
+	<% include Symbol %>
+	<% include Generator %>
+	<% include Async %>
+	<% include Promise %>
 
 	return freeze({
 
@@ -410,9 +417,11 @@ var proto = (function() {
 		Promise: PromiseProto,
 		reflect: reflect,
 
+		ToBoolean: ToBoolean,
 		ToNumber: ToNumber,
 		ToString: ToString,
 		ToArray: ToArray,
+		ToObject: ToObject,
 		ToType: ToType,
 
 		CreateObject: CreateObject,
@@ -428,6 +437,8 @@ var proto = (function() {
 		GeneratorThrow: GeneratorThrow,
 		PromiseInit: PromiseInit,
 		PromiseThen: PromiseThen,
+		CastToPromise: CastToPromise,
+		PromiseAll: PromiseAll,
 		CreateAsyncFunction: CreateAsyncFunction,
 
 		Like: Like,
@@ -440,6 +451,7 @@ var proto = (function() {
 		arrayMerge: arrayMerge,
 		arraySlice: arraySlice,
 		CheckSpread: CheckSpread,
+		AsCoercive: AsCoercive,
 
 		GetPrototype: GetPrototype,
 		Own: Own,
@@ -464,6 +476,8 @@ var proto = (function() {
 
 		SetTimeout: SetTimeout,
 		SetInterval: SetInterval,
+
+		NilCoalesce: NilCoalesce,
 
 		proxyJs: proxyJs,
 

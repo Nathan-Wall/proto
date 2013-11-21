@@ -1,9 +1,11 @@
-function CreateSymbol(proto) {
-	// TODO: This is unused. Can it be removed?
+function CreateSymbol(proto, value) {
+	var id;
+	if (IsWrapper(value) && 'Id' in value)
+		id = value.Id;
 	if (proto === undefined)
 		proto = SymbolProto;
 	var obj = CreateObject(proto);
-	SymbolInit(obj);
+	SymbolInit(obj, undefined, id);
 	return obj;
 }
 
@@ -26,7 +28,7 @@ function CreateSymbolPrimitive(stringValue, id) {
 	var prim = CreatePrimitiveWrapper(SymbolProto);
 	SymbolInit(prim, undefined, id);
 	prim.Type = 'symbol';
-	prim.ToString = stringValue;
+	prim.StringValue = stringValue;
 	return prim;
 }
 

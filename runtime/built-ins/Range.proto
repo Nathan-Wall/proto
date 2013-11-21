@@ -2,6 +2,6 @@ fn init(from, to) :{
 	// TODO
 }
 
-Range := {
+Range := #{
 	init
 };

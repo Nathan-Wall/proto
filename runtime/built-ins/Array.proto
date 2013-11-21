@@ -40,6 +40,6 @@ fn map(arrayLike, callback) :{
 	return mapped;
 }
 
-Array := {
+Array := #{
 	forEach, map
 };

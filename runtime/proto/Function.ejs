@@ -77,3 +77,15 @@ function Bind(obj, receiver) {
 		bound = lazyBind(f, receiver);
 	return CreateFunction(FunctionProto, bound, f.length + 1);
 }
+
+function AsCoercive(f, nilable) {
+	if (!IsCallable(f))
+		throw new TypeError('Function expected');
+	if (nilable)
+		return CreateFunction(null, function(value) {
+			if (value === null || value === undefined)
+				return undefined;
+			return Call(f, undefined, [ value ]);
+		}, 1);
+	return f;
+}
