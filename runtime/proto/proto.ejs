@@ -33,8 +33,10 @@ var proto = (function() {
 		push = lazyBind(Array.prototype.push),
 		pushAll = lazyTie(Array.prototype.push),
 		pop = lazyBind(Array.prototype.pop),
+		shift = lazyBind(Array.prototype.shift),
 		slice = lazyBind(Array.prototype.slice),
 		splice = lazyBind(Array.prototype.splice),
+		_splice = Array.prototype.splice,
 		test = lazyBind(RegExp.prototype.test),
 
 		MAX_PRECISION = Math.pow(2, 53),
@@ -124,6 +126,10 @@ var proto = (function() {
 
 	function arraySlice(array, from, to) {
 		return slice(array, from, to);
+	}
+
+	function spliceAll(array, index, count, elements) {
+		return apply(_splice, array, arrayMerge([ index, count ], slice(elements)));
 	}
 
 	// TODO: This may not be being used...
@@ -398,6 +404,7 @@ var proto = (function() {
 	<% include Array %>
 	<% include Range %>
 	<% include Symbol %>
+	<% include Slot %>
 	<% include Generator %>
 	<% include Async %>
 	<% include Promise %>
@@ -430,6 +437,7 @@ var proto = (function() {
 		CreateRange: CreateRange,
 		CreateSymbol: CreateSymbol,
 		CreateSymbolPrimitive: CreateSymbolPrimitive,
+		CreateSlot: CreateSlot,
 		SymbolInit: SymbolInit,
 		CreateGeneratorFunction: CreateGeneratorFunction,
 		GeneratorInit: GeneratorInit,
@@ -466,6 +474,7 @@ var proto = (function() {
 		Call: Call,
 		CallMethod: CallMethod,
 		CallOwnMethod: CallOwnMethod,
+		PartiallyApply: PartiallyApply,
 
 		IsObject: IsObject,
 		IsCallable: IsCallable,

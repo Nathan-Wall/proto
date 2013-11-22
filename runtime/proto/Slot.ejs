@@ -1,0 +1,19 @@
+// Slot objects should be impossible to create from user code (without a slot
+// expression).
+function CreateSlot(value, rest) {
+	var obj;
+	if (value !== null) {
+		value = ToNumber(value);
+		// This check is because `(-0) | 0` is `+0`
+		if (value != 0)
+			value = value | 0;
+	}
+	// TODO: Find places where !! is being used and use ToBoolean instead
+	rest = ToBoolean(rest);
+	obj = CreateObject(null);
+	if (rest)
+		obj.Slot = 'rest';
+	else
+		obj.Slot = value;
+	return obj;
+}
