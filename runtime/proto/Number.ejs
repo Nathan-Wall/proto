@@ -38,6 +38,17 @@ function ToLength(argument) {
 	return min(len, MAX_PRECISION - 1);
 }
 
+function ToIndex(argument, length, toInt) {
+	if (toInt === undefined)
+		toInt = true;
+	var coercive = toInt ? ToInteger : ToNumber,
+		i = coercive(argument);
+	if (sign(i) == -1)
+		return coercive(length) - 1 + i;
+	else
+		return i;
+}
+
 function sign(argument) {
 	var number = +argument;
 	if (number > 0)

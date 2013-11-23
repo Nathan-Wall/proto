@@ -6,6 +6,7 @@ import 'Function.proto';
 //import 'Array.proto';
 import 'Range.proto';
 import 'Symbol.proto';
+import 'Slot.proto';
 import 'Generator.proto';
 import 'Promise.proto';
 import 'reflect.proto';

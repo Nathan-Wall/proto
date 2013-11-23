@@ -98,11 +98,13 @@ function PartiallyApply(f, appliedArgs) {
 	return CreateFunction(undefined, function() {
 		var args = create(null),
 			unusedIndices = create(null),
-			arg, slot, rest, unused, i;
+			unusedCollapsed = create(null),
+			arg, slot, unused, i, j, insert;
 		args.length = 0;
 		for (i = 0; i < arguments.length; i++)
-			unusedIndices[i] = i;
+			unusedIndices[i] = true;
 		unusedIndices.length = arguments.length;
+		unusedCollapsed.length = 0;
 		// First pass: Replace slots that are explicit indices and note which
 		// ones have been used.
 		for (i = 0; i < appliedArgs.length; i++) {
@@ -112,10 +114,10 @@ function PartiallyApply(f, appliedArgs) {
 				if (typeof slot == 'number') {
 					if (sign(slot) == -1)
 						slot = arguments.length - 1 + slot;
-					delete unusedIndices[slot];
+					unusedIndices[slot] = false;
 					push(args, arguments[slot]);
 				}
-				else if (slot === null || slot === 'rest')
+				else if (slot === null || IsObject(slot) && 'RangeFrom' in slot)
 					push(args, arg);
 				else
 					throw new Error('Invalid slot value');
@@ -124,32 +126,54 @@ function PartiallyApply(f, appliedArgs) {
 				push(args, arg);
 		}
 		// Collapse unusedIndices array
-		for (i = unusedIndices.length - 1; i >= 0; i--)
-			if (!(i in unusedIndices))
-				splice(unusedIndices, i, 1);
+		for (i = 0; i < unusedIndices.length; i++)
+			if (unusedIndices[i])
+				push(unusedCollapsed, i);
 		// Second pass: Fill in implicit slots
 		for (i = 0; i < args.length; i++) {
 			arg = args[i];
 			if (IsWrapper(arg) && 'Slot' in arg) {
 				slot = arg.Slot;
-				if (slot === null)
-					args[i] = arguments[shift(unusedIndices)];
-				else if (slot === 'rest' && rest === undefined)
-					rest = i;
-				else
+				if (slot === null) {
+					j = shift(unusedCollapsed);
+					args[i] = arguments[j];
+					unusedIndices[j] = false;
+				}
+				else if (!IsObject(slot) || !('RangeFrom' in slot))
 					throw new Error('Unexpected slot value');
 			}
 		}
-		// Fill in rest slot
-		if (rest !== undefined) {
-			unused = create(null);
-			unused.length = 0;
-			for (i = 0; i < unusedIndices.length; i++)
-				push(unused, arguments[unusedIndices[i]]);
-			spliceAll(args, rest, 1, unused);
+		// Fill in range slots
+		for (i = 0; i < args.length; i++) {
+			arg = args[i];
+			if (IsWrapper(arg) && 'Slot' in arg) {
+				insert = PartiallyApplyRange(
+					arg.Slot, arguments, unusedIndices
+				);
+				spliceAll(args, i, 1, insert);
+				i += insert.length - 1;
+			}
 		}
 		Call(f, this, slice(args));
 	}, appliedArgs.length);
-	// TODO: Adjust length for rest slots (probably subtract one if there's a rest slot)
 	// TODO: Enforce only one rest slot permitted (in parser)
+}
+
+function PartiallyApplyRange(range, args, unusedIndices) {
+	var insert = create(null),
+		// It's okay that from and to are coerced to integers because it can
+		// still simulate an iteratable where each value that is produced by
+		// the iterable is 
+		from = ToIndex(range.RangeFrom, args.length),
+		to = ToIndex(range.RangeTo, args.length),
+		i, L;
+	insert.length = 0;
+	from = min(max(from, 0), args.length);
+	to = min(max(to, 0), args.length);
+	for (i = from; from < to ? i < to : i > to; from < to ? i++ : i--)
+		if (unusedIndices[i]) {
+			push(insert, args[i]);
+			unusedIndices[i] = false;
+		}
+	return insert;
 }

@@ -1,19 +1,22 @@
-// Slot objects should be impossible to create from user code (without a slot
-// expression).
-function CreateSlot(value, rest) {
+function CreateSlot(proto, value) {
 	var obj;
-	if (value !== null) {
+	if (proto === undefined)
+		proto = SlotProto;
+	if (!IsObject(proto))
+		throw new TypeError('Object expected');
+	obj = CreateObject(proto);
+	SlotInit(obj, value);
+	return obj;
+}
+
+function SlotInit(obj, value) {
+	if (value === undefined)
+		value = null;
+	else if (value !== null && !(IsObject(value) && 'RangeFrom' in value)) {
 		value = ToNumber(value);
 		// This check is because `(-0) | 0` is `+0`
 		if (value != 0)
 			value = value | 0;
 	}
-	// TODO: Find places where !! is being used and use ToBoolean instead
-	rest = ToBoolean(rest);
-	obj = CreateObject(null);
-	if (rest)
-		obj.Slot = 'rest';
-	else
-		obj.Slot = value;
-	return obj;
+	obj.Slot = value;
 }
