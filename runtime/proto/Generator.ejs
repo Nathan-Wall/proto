@@ -147,6 +147,10 @@ function GeneratorHandleDelegate(generator, method, arg) {
 	}
 }
 
+GeneratorProto.Iterator = CreateFunction(undefined, function() {
+	return this;
+});
+
 function GeneratorContext() {
 	this.reset();
 }

@@ -41,6 +41,7 @@ var proto = (function() {
 		test = lazyBind(RegExp.prototype.test),
 
 		MAX_PRECISION = Math.pow(2, 53),
+		MAX_UINT = Math.pow(2, 32) - 1,
 
 		ObjectProto = CreateObject(null),
 		BooleanProto = CreateObject(ObjectProto),
@@ -55,6 +56,9 @@ var proto = (function() {
 		SlotProto = CreateObject(ObjectProto),
 		GeneratorProto = CreateObject(ObjectProto),
 		reflect = CreateObject(ObjectProto),
+
+		$iterator = CreateSymbolPrimitive('@iterator', 'Iterator'),
+		$toComparable = CreateSymbolPrimitive('@toComparable', 'ToComparable'),
 
 		I = function I(value) { return value; },
 
@@ -111,6 +115,14 @@ var proto = (function() {
 		// Note that since functions are wrapped, the return value should be
 		// "object".
 		return typeof value;
+	}
+
+	function ToComparable(value) {
+		if (!IsWrapper(value))
+			return value;
+		if (Has(value, $toComparable))
+			return Call(Get(value, $toComparable), value);
+		return value;
 	}
 
 	function arrayMerge(/* ...arrays */) {
@@ -218,49 +230,6 @@ var proto = (function() {
 				args[i] = proxyJs(arguments[i]);
 			apply(F, proxyJs(this), args);
 		};
-	}
-
-	// TODO: If Define exists, it should probably operate on a wrapped desc. ??
-	// function Define(obj, key, desc) {
-	// 	if (!IsObject(obj))
-	// 		throw new TypeError('Object expected');
-	// 	define(obj.Value, key desc);
-	// 	return obj;
-	// }
-
-	function define(obj, name, desc) {
-		if ('value' in desc && !hasOwn(desc, 'value')
-			|| 'get' in desc && !hasOwn(desc, 'get')
-			|| 'set' in desc && !hasOwn(desc, 'set')
-			|| 'enumerable' in desc && !hasOwn(desc, 'enumerable')
-			|| 'writable' in desc && !hasOwn(desc, 'writable')
-			|| 'configurable' in desc && !hasOwn(desc, 'configurable'))
-			desc = createSafeDescriptor(desc);
-		return defineProperty(obj, name, desc);
-	}
-
-	function createSafeDescriptor(obj) {
-		if (obj == null) {
-			locked = true;
-			throw new TypeError('Argument cannot be null or undefined.');
-		}
-		obj = Object(obj);
-		var O = create(null),
-			k = keys(obj);
-		for (var i = 0, key = k[i]; key = k[i], i < k.length; i++)
-			O[key] = obj[key];
-		return O;
-	}
-
-	function getPropertyDescriptor(obj, key) {
-		var desc, K;
-		if (Object(obj) !== obj)
-			throw new TypeError('Object expected');
-		K = String(key);
-		do {
-			desc = getOwnPropertyDescriptor(obj, K);
-		} while (desc === undefined && (obj = getPrototypeOf(obj)));
-		return desc;
 	}
 
 	function __convertFunctions__(obj) {
@@ -429,9 +398,11 @@ var proto = (function() {
 
 		ToBoolean: ToBoolean,
 		ToNumber: ToNumber,
+		ToUint32: ToUint32,
 		ToString: ToString,
 		ToArray: ToArray,
 		ToObject: ToObject,
+		ToComparable: ToComparable,
 		ToType: ToType,
 
 		CreateObject: CreateObject,
@@ -475,6 +446,8 @@ var proto = (function() {
 		Set: Set,
 		SetOwn: SetOwn,
 		Delete: Delete,
+		GetDescriptor: GetDescriptor,
+		GetOwnDescriptor: GetOwnDescriptor,
 		Call: Call,
 		CallMethod: CallMethod,
 		CallOwnMethod: CallOwnMethod,
@@ -495,8 +468,11 @@ var proto = (function() {
 		proxyJs: proxyJs,
 
 		Infinity: Infinity,
-		$ToString: CreateSymbolPrimitive('@toString', 'ToString'),
-		$Get: CreateSymbolPrimitive('@get', 'Get'),
+
+		'@toString': CreateSymbolPrimitive('@toString', 'ToString'),
+		'@get': CreateSymbolPrimitive('@get', 'Get'),
+		'@iterator': $iterator,
+		'@toComparable': $toComparable,
 		// ... TODO: Do others
 
 		toWrapped: function toWrapped() {

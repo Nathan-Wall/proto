@@ -1,7 +1,7 @@
 function CreateSymbol(proto, value) {
 	var id;
-	if (IsWrapper(value) && 'Id' in value)
-		id = value.Id;
+	if (IsWrapper(value) && 'SymbolId' in value)
+		id = value.SymbolId;
 	if (proto === undefined)
 		proto = SymbolProto;
 	var obj = CreateObject(proto);
@@ -13,11 +13,11 @@ function SymbolInit(obj, value, id) {
 	if (!IsWrapper(obj))
 		throw new TypeError('Object expected');
 	if (id !== undefined)
-		obj.Id = String(id);
+		obj.SymbolId = String(id);
 	else if (value === undefined)
-		obj.Id = '_' + identifiers.next();
-	else if (IsWrapper(value) && 'Id' in value)
-		obj.Id = value.Id;
+		obj.SymbolId = '_' + identifiers.next();
+	else if (IsWrapper(value) && 'SymbolId' in value)
+		obj.SymbolId = value.SymbolId;
 	else
 		throw new TypeError('Value is not a symbol');
 }
@@ -38,9 +38,12 @@ SymbolProto.Get = function Get(obj, receiver) {
 		throw new TypeError('Object expected');
 	if (!IsWrapper(obj))
 		throw new TypeError('Object expected');
-	if (!('Id' in this))
+	if (!('SymbolId' in this))
 		throw new TypeError('Symbol expected');
-	return obj[this.Id];
+	var id = this.SymbolId;
+	if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, id))
+		return obj.StaticSymbols[id];
+	return obj[id];
 };
 SymbolProto.GetOwn = function GetOwn(obj, receiver) {
 	// TODO: receiver
@@ -48,10 +51,13 @@ SymbolProto.GetOwn = function GetOwn(obj, receiver) {
 		throw new TypeError('Object expected');
 	if (!IsWrapper(obj))
 		throw new TypeError('Object expected');
-	if (!('Id' in this))
+	if (!('SymbolId' in this))
 		throw new TypeError('Symbol expected');
-	if (hasOwn(obj[this.Id]))
-		return obj[this.Id];
+	var id = this.SymbolId;
+	if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, id))
+		return obj.StaticSymbols[id];
+	if (hasOwn(obj, id))
+		return obj[id];
 	return undefined;
 };
 
@@ -62,19 +68,31 @@ SymbolProto.Set = function Set(obj, value, receiver) {
 		throw new TypeError('Object expected');
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
-	obj[this.Id] = value;
+	if (!('SymbolId' in this))
+		throw new TypeError('Symbol expected');
+	var id = this.SymbolId;
+	if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, id)) {
+		obj.StaticSymbols[id] = value;
+		return;
+	}
+	obj[id] = value;
 };
 SymbolProto.SetOwn = function SetOwn(obj, value, receiver) {
 	// TODO: receiver
-	var K;
 	if (!IsWrapper(this))
 		throw new TypeError('Object expected');
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
-	K = this.Id;
-	if (!(K in obj) || hasOwn(obj, K))
-		return obj[K] = value;
-	define(obj, K, {
+	if (!('SymbolId' in this))
+		throw new TypeError('Symbol expected');
+	var id = this.SymbolId;
+	if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, id)) {
+		obj.StaticSymbols[id] = value;
+		return;
+	}
+	if (!(id in obj) || hasOwn(obj, id))
+		return obj[id] = value;
+	define(obj, id, {
 		value: value,
 		enumerable: true,
 		writable: true,
@@ -83,23 +101,25 @@ SymbolProto.SetOwn = function SetOwn(obj, value, receiver) {
 };
 
 SymbolProto.Has = function Has(obj) {
-	var K;
 	if (!IsWrapper(this))
 		throw new TypeError('Object expected');
 	if (!IsObject(obj))
 		return false;
-	K = this.Id;
-	return K in obj;
+	var id = this.SymbolId;
+	if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, id))
+		return hasOwn(obj.StaticSymbols, id);
+	return id in obj;
 };
 
 SymbolProto.HasOwn = function HasOwn(obj) {
-	var K;
 	if (!IsWrapper(this))
 		throw new TypeError('Object expected');
 	if (!IsObject(obj))
 		return false;
-	K = this.Id;
-	return hasOwn(obj, K);
+	var id = this.SymbolId;
+	if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, id))
+		return hasOwn(obj.StaticSymbols, id);
+	return hasOwn(obj, id);
 };
 
 // TODO: Get this working
@@ -108,7 +128,10 @@ SymbolProto.Delete = function Delete(obj) {
 		throw new TypeError('Object expected');
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
-	if (!('Id' in this))
+	if (!('SymbolId' in this))
 		throw new TypeError('Symbol expected');
-	return delete obj[this.Id];
+	var id = this.SymbolId;
+	if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, id))
+		return delete obj.StaticSymbols[id];
+	return delete obj[id];
 };

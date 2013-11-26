@@ -1,5 +1,5 @@
 // properties will always be a native JS object
-function CreateObject(proto, properties, staticProperties) {
+function CreateObject(proto, properties, staticProps, extendedProps) {
 	var wrapper, protoValue;
 	if (proto === undefined)
 		proto = ObjectProto;
@@ -15,10 +15,16 @@ function CreateObject(proto, properties, staticProperties) {
 	}
 	wrapper = create(proto);
 	wrapper.Value = simile.like(protoValue, properties);
-	if (staticProperties !== undefined) {
-		if (Object(staticProperties) !== staticProperties)
+	if (staticProps !== undefined) {
+		if (Object(staticProps) !== staticProps)
 			throw new TypeError('Object expected');
-		wrapper.Static = own(staticProperties);
+		wrapper.Static = own(staticProps);
+	}
+	if (extendedProps !== undefined) {
+		for (var i = 0, p; i < extendedProps.length; i++) {
+			p = extendedProps[i];
+			Define(wrapper, p.kind, p.key, p.value, p.static, true, true);
+		}
 	}
 	return wrapper;
 }
@@ -74,19 +80,35 @@ function Own(obj) {
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
 	var O = CreateObject(null),
-		keys = getOwnPropertyNames(obj.Value),
+		keys = getOwnPropertyNames(obj),
 		i, key;
+	for (i = 0, key; i < keys.length; i++) {
+		key = keys[i];
+		define(O, key, getOwnPropertyDescriptor(obj, key));
+	}
+	keys = getOwnPropertyNames(obj.Value);
 	for (i = 0, key; i < keys.length; i++) {
 		key = keys[i];
 		define(O.Value, key, getOwnPropertyDescriptor(obj.Value, key));
 	}
-	if (hasOwn(obj, 'Static')) {
-		keys = getOwnPropertyNames(obj.Static);
-		if (!hasOwn(O, 'Static'))
-			O.Static = create(null);
+	if (hasOwn(obj, 'StaticSymbols')) {
+		keys = getOwnPropertyNames(obj.StaticSymbols);
+		O.StaticSymbols = create(null);
 		for (i = 0, key; i < keys.length; i++) {
 			key = keys[i];
-			define(O.Static, key, getOwnPropertyDescriptor(obj.Static, key));
+			define(O.StaticSymbols, key,
+				getOwnPropertyDescriptor(obj.StaticSymbols, key)
+			);
+		}
+	}
+	if (hasOwn(obj, 'Static')) {
+		keys = getOwnPropertyNames(obj.Static);
+		O.Static = create(null);
+		for (i = 0, key; i < keys.length; i++) {
+			key = keys[i];
+			define(O.Static, key,
+				getOwnPropertyDescriptor(obj.Static, key)
+			);
 		}
 	}
 	return O;
@@ -163,6 +185,9 @@ function Get(obj, key, receiver) {
 				if (typeof get != 'function')
 					throw new TypeError('Function expected');
 				if (obj.ProxyJs) {
+					// TODO: Can this just be
+					//     return proxyJs(call(get, receiver));
+					// ?
 					GetF = CreateFunction(null, get);
 					return proxyJs(Call(GetF, receiver, [ ]));
 				}
@@ -259,13 +284,16 @@ function Set(obj, key, value, receiver) {
 		return value;
 	}
 	else if (hasOwn(desc, 'set')) {
+		set = desc.set;
 		if (obj.ProxyJs) {
+			// TODO: Can this just be
+			//     call(set, receiver, value);
+			// ?
 			SetF = CreateFunction(null, set);
-			UnwrapProto(Call(SetF, receiver, [ value ]));
+			Call(SetF, receiver, [ value ]);
 			return  value;
 		}
 		else {
-			set = desc.set;
 			if (typeof set != 'function')
 				throw new TypeError('Function expected');
 			SetF = set.__ProtoFunction__;
@@ -367,21 +395,39 @@ function GetDescriptor(obj, key) {
 	var O, isStatic = false;
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
-	key = ToString(key);
-	if (hasOwn(obj, 'Static') && hasOwn(obj.Static, key)) {
-		isStatic = true;
-		O = obj.Static;
+	// TODO: what if key is a symbol or private symbol?
+	if (IsWrapper(key) && 'SymbolId' in key) {
+		key = key.SymbolId;
+		if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, key)) {
+			isStatic = true;
+			O = obj.StaticSymbols;
+		}
+		else if (key in obj)
+			O = obj;
+		else
+			return undefined;
+	} else {
+		key = ToString(key);
+		if (hasOwn(obj, 'Static') && hasOwn(obj.Static, key)) {
+			isStatic = true;
+			O = obj.Static;
+		}
+		else if (key in obj.Value)
+			O = obj.Value;
+		else
+			return undefined;
 	}
-	else if (key in obj.Value)
-		O = obj.Value;
 	var desc = getPropertyDescriptor(O, key),
 		K = keys(desc),
 		d = create(null);
 	for (var i = 0, k; i < K.length; i++) {
 		k = K[i];
-		if (k == 'get' || k == 'set')
-			d[k] = CreateFunction(FunctionProto, desc[k]);
-		else
+		if (k == 'get' || k == 'set') {
+			if (!hasOwn(desc[k], '__ProtoFunction__'))
+				throw new TypeError('Wrapper function expected');
+			d[k] = desc[k].__ProtoFunction__;
+		}
+		else if (k != 'enumerable')
 			d[k] = desc[k];
 	}
 	d.static = isStatic;
@@ -437,4 +483,90 @@ function GetPrototype(obj) {
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
 	return getPrototypeOf(obj);
+}
+
+function Define(obj, kind, key, value, isStatic, writable, configurable) {
+	// TODO: Permit this operation on wrappers?
+	if (!IsObject(obj))
+		throw new TypeError('Object expected');
+	var O, desc = create(null), prop,
+		isSymbol = IsWrapper(key) && 'SymbolId' in key;
+	if (isStatic) {
+		prop = 'Static';
+		if (isSymbol)
+			prop += 'Symbols';
+		if (hasOwn(obj, prop))
+			O = obj[prop];
+		else
+			O = obj[prop] = create(null);
+	}
+	else if (isSymbol)
+		O = obj;
+	else
+		O = obj.Value;
+	kind = ToString(kind);
+	if (isSymbol)
+		key = key.SymbolId;
+	else if (typeof key != 'string')
+		throw new TypeError('Expected string or symbol');
+	if (kind == 'value')
+		desc.value = value;
+	else if (kind == 'get') {
+		if (!IsCallable(value))
+			throw new TypeError('Function expected');
+		desc.get = function() {
+			return Call(value, this, [ ]);
+		};
+		desc.get.__ProtoFunction__ = value;
+	}
+	else if (kind == 'set') {
+		if (!IsCallable(value))
+			throw new TypeError('Function expected');
+		desc.set = function(v) {
+			return Call(value, this, [ v ]);
+		};
+		desc.get.__ProtoFunction__ = value;
+	}
+	else
+		throw new Error('Invalid kind: "' + kind + '"');
+	desc.writable = ToBoolean(writable);
+	desc.configurable = ToBoolean(configurable);
+	desc.enumerable = false;
+	defineProperty(O, key, desc);
+	return obj;
+}
+
+function define(obj, name, desc) {
+	if ('value' in desc && !hasOwn(desc, 'value')
+		|| 'get' in desc && !hasOwn(desc, 'get')
+		|| 'set' in desc && !hasOwn(desc, 'set')
+		|| 'enumerable' in desc && !hasOwn(desc, 'enumerable')
+		|| 'writable' in desc && !hasOwn(desc, 'writable')
+		|| 'configurable' in desc && !hasOwn(desc, 'configurable'))
+		desc = createSafeDescriptor(desc);
+	return defineProperty(obj, name, desc);
+}
+
+function createSafeDescriptor(obj) {
+	if (obj == null) {
+		locked = true;
+		throw new TypeError('Argument cannot be null or undefined.');
+	}
+	obj = Object(obj);
+	var O = create(null),
+		k = keys(obj);
+	for (var i = 0, key = k[i]; key = k[i], i < k.length; i++)
+		O[key] = obj[key];
+	return O;
+}
+
+function getPropertyDescriptor(obj, key) {
+	var desc, K;
+	if (Object(obj) !== obj)
+		throw new TypeError('Object expected');
+	K = String(key);
+	do {
+		desc = getOwnPropertyDescriptor(obj, K);
+	} while (desc === undefined && (obj = getPrototypeOf(obj)));
+	return desc;
 }

@@ -11,15 +11,24 @@ function ToNumber(value) {
 	var v;
 	if (IsWrapper(value)) {
 		if ('ToNumber' in value)
-			return !!Call(value.ToNumber, value, [ ]);
+			return +Call(value.ToNumber, value, [ ]);
 		if ('NumberValue' in value)
-			return !!value.NumberValue;
+			return +value.NumberValue;
 		return NaN;
 	}
 	else if (value === null || value === undefined)
 		return 0;
 	else
 		return +value;
+}
+
+function ToUint32(argument) {
+	var number = ToNumber(argument);
+	if (number < 0)
+		return 0;
+	if (number > MAX_UINT)
+		return MAX_UINT;
+	return number >>> 0;
 }
 
 function ToInteger(argument) {

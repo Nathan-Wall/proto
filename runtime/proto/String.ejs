@@ -11,9 +11,9 @@ function ToString(value) {
 	var v;
 	if (IsWrapper(value)) {
 		if ('ToString' in value)
-			return !!Call(value.ToString, value, [ ]);
+			return String(Call(value.ToString, value, [ ]));
 		if ('StringValue' in value)
-			return !!value.StringValue;
+			return String(value.StringValue);
 		if (IsObject(value))
 			return '[Object]';
 		return '[???]';

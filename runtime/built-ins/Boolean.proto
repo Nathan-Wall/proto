@@ -1,0 +1,7 @@
+fn toComparable() :{
+	return !!this;
+}
+
+Boolean := {
+	@toComparable: toComparable
+};
