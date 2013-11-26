@@ -45,6 +45,13 @@ fn isObject(value) :{
 	return P.IsObject(value);
 }
 
+fn define(obj, key, desc) :{
+	// Note: It makes sense for Proto to examine inherited properties in the
+	// descriptors, although it doesn't for JS, because it's trivial to create
+	// dictionaries in Proto.
+	// TODO
+}
+
 reflect := #{
 	getDescriptor, getOwnDescriptor, has, hasOwn, isCallable,
 	keys, ownKeys, isObject

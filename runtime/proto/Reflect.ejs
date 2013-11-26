@@ -56,6 +56,14 @@ function IsPrimitiveWrapper(value) {
 	return IsWrapper(value) && !!value.Primitive;
 }
 
+function Is(a, b) {
+	if (a === 0 && b === 0)
+		return 1 / a === 1 / b;
+	if (a !== a)
+		return b !== b;
+	return a === b;
+}
+
 function CheckSpread(value) {
 	if (IsLike(value, ArrayProto))
 		return value;

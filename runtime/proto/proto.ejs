@@ -25,6 +25,7 @@ var proto = (function() {
 		max = Math.max,
 		floor = Math.floor,
 		abs = Math.abs,
+		pow = Math.pow,
 
 		hasOwn = lazyBind(Object.prototype.hasOwnProperty),
 		call = lazyBind(Function.prototype.call),
@@ -40,8 +41,8 @@ var proto = (function() {
 		_splice = Array.prototype.splice,
 		test = lazyBind(RegExp.prototype.test),
 
-		MAX_PRECISION = Math.pow(2, 53),
-		MAX_UINT = Math.pow(2, 32) - 1,
+		MAX_PRECISION = pow(2, 53),
+		MAX_UINT = pow(2, 32) - 1,
 
 		ObjectProto = CreateObject(null),
 		BooleanProto = CreateObject(ObjectProto),
@@ -122,7 +123,7 @@ var proto = (function() {
 			return value;
 		if (Has(value, $toComparable))
 			return Call(Get(value, $toComparable), value);
-		return value;
+		throw new TypeError('Object is not comparable');
 	}
 
 	function arrayMerge(/* ...arrays */) {
@@ -424,6 +425,7 @@ var proto = (function() {
 		PromiseAll: PromiseAll,
 		CreateAsyncFunction: CreateAsyncFunction,
 
+		Is: Is,
 		Like: Like,
 		IsLike: IsLike,
 		New: New,
@@ -456,6 +458,8 @@ var proto = (function() {
 		IsObject: IsObject,
 		IsCallable: IsCallable,
 		GetOwnKeys: GetOwnKeys,
+
+		Pow: Pow,
 
 		Slice: Slice,
 		SliceOwn: SliceOwn,

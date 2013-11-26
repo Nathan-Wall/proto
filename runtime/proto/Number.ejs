@@ -73,3 +73,9 @@ function sign(argument) {
 	else
 		throw new Error('Unexpected value');
 }
+
+function Pow(left, right) {
+	left = ToNumber(left);
+	right = ToNumber(right);
+	return pow(left, right);
+}
