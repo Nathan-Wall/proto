@@ -1,0 +1,7 @@
+fn init(value) :{
+	P.SlotInit(this, value, false);
+}
+
+Slot := #{
+	init
+};
