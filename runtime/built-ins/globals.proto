@@ -20,7 +20,7 @@ string = string(value) :{
 };
 
 function = function(value) :{
-	if (!P.IsCallable(value))
+	if !P.IsCallable(value):
 		throw new TypeError('Function expected');
 	return value;
 };

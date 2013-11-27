@@ -27,12 +27,11 @@ fn keys(value) :{
 		ks,
 		p = value,
 		i = 0;
-	// TODO: Can the `do` be removed from the do..while loop? Bad idea?
 	do :{
 		ks = P.GetOwnKeys(p);
-		for (var j = 0; j < ks.length; j++)
+		for var j = 0; j < ks.length; j++:
 			k[i++] = ks[j];
-	} while (p = P.GetPrototype(p));
+	} while p = P.GetPrototype(p);
 	k.length = i;
 	return P.CreateArray(Array, k);
 }
