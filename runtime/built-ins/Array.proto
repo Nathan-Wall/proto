@@ -4,7 +4,7 @@
 
 fn push(arrayLike, ...items) :{
 	var L = items.length;
-	for var i of arrayLike.length >>> 0 .. L:
+	for i of arrayLike.length >>> 0 .. L:
 		arrayLike[i] = items[i];
 	// TODO: Return value?
 }
@@ -13,7 +13,7 @@ fn push(arrayLike, ...items) :{
 // like to not have overlap
 fn append(arrayLike, ...items) :{
 	var L = items.length;
-	for var i = arrayLike.length >>> 0; i < L; i++:
+	for i of arrayLike.length >>> 0 .. L:
 		P.Define(arrayLike, i, {
 			value: items[i],
 			writable: true,
@@ -26,7 +26,7 @@ fn forEach(arrayLike, callback) :{
 	if !P.IsObject(arrayLike):
 		throw new TypeError('Object expected');
 	var L = arrayLike.length >>> 0;
-	for var i = 0; i < L; i++:
+	for i of 0..L:
 		callback(arrayLike[i], i);
 }
 
@@ -35,7 +35,7 @@ fn map(arrayLike, callback) :{
 		throw new TypeError('Object expected');
 	var L = arrayLike.length >>> 0,
 		mapped = [ ];
-	for var i = 0; i < L; i++:
+	for i of 0..L:
 		mapped::append(callback(arrayLike[i], i));
 	return mapped;
 }

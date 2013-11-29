@@ -29,7 +29,7 @@ fn keys(value) :{
 		i = 0;
 	do :{
 		ks = P.GetOwnKeys(p);
-		for var j = 0; j < ks.length; j++:
+		for j of 0..ks.length:
 			k[i++] = ks[j];
 	} while p = P.GetPrototype(p);
 	k.length = i;
