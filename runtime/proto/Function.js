@@ -85,38 +85,16 @@ function GetFunction(F) {
 }
 
 function CallMethod(obj, key, args) {
-	var K, F;
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
-	if (IsWrapper(key)) {
-		if ('Get' in key)
-			return Call(key.Get(obj), obj, args);
-		else
-			throw new Error(
-				'Object cannot be used as a property key in get operation'
-			);
-	}
-	K = ToString(key);
-	F = Get(obj, K);
-	return Call(F, obj, args);
+	return Call(Get(obj, key), obj, args);
 }
 
 function CallOwnMethod(obj, key, args) {
 	var K;
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
-	if (IsWrapper(key)) {
-		if ('Get' in key)
-			return Call(key.Get(obj), obj, args);
-		else
-			throw new Error(
-				'Object cannot be used as a property key in get operation'
-			);
-	}
-	K = ToString(key);
-	if (!hasOwn(obj, P))
-		throw new TypeError('Object has no method "' + K + '"');
-	return CallMethod(obj, K, args);
+	return Call(GetOwn(obj, key), obj, args);
 }
 
 function Bind(obj, receiver) {

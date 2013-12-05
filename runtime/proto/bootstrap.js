@@ -29,6 +29,10 @@ var Object = global.Object,
 	call = lazyBind(Function.prototype.call),
 	apply = lazyBind(Function.prototype.apply),
 	bind = lazyBind(Function.prototype.bind),
+	// TODO: Is there a reason to have both `bind` and `lazyBind`?
+	// Maybe using `bind(f, o)` is more performant instead of `lazyBind(f, o)`?
+	// If not, maybe just get rid of `bind` and rename `lazyBind` to `bind`?
+	tie = lazyTie,
 	join = lazyBind(Array.prototype.join),
 	push = lazyBind(Array.prototype.push),
 	pushAll = lazyTie(Array.prototype.push),
@@ -41,8 +45,6 @@ var Object = global.Object,
 	charAt = lazyBind(String.prototype.charAt),
 	stringSlice = lazyBind(String.prototype.slice),
 	test = lazyBind(RegExp.prototype.test),
-
-	consoleLog = bind(global.console.log, global.console),
 
 	MAX_PRECISION = pow(2, 53),
 	MAX_UINT = pow(2, 32) - 1,
@@ -69,6 +71,7 @@ var Object = global.Object,
 	$$toComparable = CreateSymbolPrimitive('@toComparable', 'ToComparable'),
 
 	I = function I(value) { return value; },
+	NOOP = function() { },
 
 	identifiers = new Identifiers();
 

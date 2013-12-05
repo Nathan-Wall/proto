@@ -1,12 +1,33 @@
-var console = CreatePrototype({
+var consoleLog = getConsoleMethod('log'),
+	consoleError = getConsoleMethod('error'),
+	consoleWarn = getConsoleMethod('warn'),
 
-	log: function log(/* ...values */) {
-		Log(arguments);
-	}
+	console = CreatePrototype({
 
-});
+		log: function log(/* ...values */) {
+			CallConsoleMethod(consoleLog, arguments);
+		},
 
-function Log(values) {
+		error: function error(/* ...values */) {
+			CallConsoleMethod(consoleError, arguments);
+		},
+
+		warn: function warn(/* ...values */) {
+			CallConsoleMethod(consoleWarn, arguments);
+		}
+
+	});
+
+function getConsoleMethod(name) {
+	if (Object(global.console) !== global.console)
+		return NOOP;
+	var f = global.console[name];
+	if (typeof f != 'function')
+		return NOOP;
+	return tie(f, global.console)
+}
+
+function CallConsoleMethod(f, values) {
 	var args = create(null),
 		value;
 	args.length = 0;
@@ -17,5 +38,5 @@ function Log(values) {
 		else
 			push(args, value);
 	}
-	consoleLog(args);
+	f(args);
 }
