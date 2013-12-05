@@ -1,35 +1,35 @@
-boolean = boolean(value) :{
-	return !!value;
-};
+// boolean = boolean(value) :{
+// 	return !!value;
+// };
 
-number = number(value) :{
-	return +value;
-};
+// number = number(value) :{
+// 	return +value;
+// };
 
-int = int(value) :{
-	return value or 0;
-};
+// int = int(value) :{
+// 	return value or 0;
+// };
 
-uint = uint(value) :{
-	// TODO: Make sure >>> and similar operators explicitly call ToNumber
-	return value >>> 0;
-};
+// uint = uint(value) :{
+// 	// TODO: Make sure >>> and similar operators explicitly call ToNumber
+// 	return P.ToUint32(value);
+// };
 
-string = string(value) :{
-	return &value;
-};
+// string = string(value) :{
+// 	return &value;
+// };
 
-function = function(value) :{
-	if !P.IsCallable(value):
-		throw new TypeError('Function expected');
-	return value;
-};
+// function = function(value) :{
+// 	if !P.IsCallable(value):
+// 		throw new TypeError('Function expected');
+// 	return value;
+// };
 
-object = object(value) :{
-	return P.ToObject(value);
-};
+// object = object(value) :{
+// 	return P.ToObject(value);
+// };
 
-setTimeout = setTimeout(f, interval) :{
-	// TODO: use coercives above
-	P.SetTimeout(f, interval);
-};
+// setTimeout = setTimeout(f, interval) :{
+// 	// TODO: use coercives above
+// 	P.SetTimeout(f, interval);
+// };

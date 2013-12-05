@@ -1,3 +1,55 @@
+var ArrayProto = CreatePrototype({
+
+	'@Iterator': function iterator() {
+		return ArrayValues(this);
+	}
+
+});
+
+var ArrayIteratorPrototype = CreatePrototype({
+
+	'@Iterator': function() { return this; },
+
+	next: function next() {
+		var O = this;
+		if (!IsObject(O))
+			throw new TypeError('Object expected');
+		if (!('ArrayIteratorNextIndex' in O))
+			throw new TypeError('ArrayIterator expected');
+		var a = O.IteratedObject;
+		if (a === undefined)
+			return CreateIterResultObject(undefined, true);
+		var index = O.ArrayIteratorNextIndex,
+			itemKind = O.ArrayIterationKind,
+			lenValue = Get(a, 'length'),
+			len = ToLength(lenValue),
+			elementKey, elementValue, result;
+		if (index >= len) {
+			O.IteratedObject = undefined;
+			return CreateIterResultObject(undefined, true);
+		}
+		O.ArrayIteratorNextIndex = index + 1;
+		if (test(/value/, itemKind)) {
+			elementKey = ToString(index);
+			elementValue = Get(a, elementKey);
+		}
+		if (test(/key\+value/, itemKind)) {
+			result = CreateObject(ArrayProto, {
+				length: 2,
+				'0': index,
+				'1': elementValue
+			});
+			return CreateIterResultObject(result, false);
+		}
+		else if (test(/key/, itemKind))
+			return CreateIterResultObject(index, false);
+		if (!test(/value/, itemKind))
+			throw new Error('Expected itemKind to contain substring "value"');
+		return CreateIterResultObject(elementValue, false);
+	}
+
+});
+
 // elements will always be a native JS object
 function CreateArray(proto, elements) {
 	var obj, L;
@@ -88,53 +140,3 @@ function CreateArrayIterator(array, kind) {
 	iterator.ArrayIterationKind = kind;
 	return iterator;
 }
-
-// TODO: reorganize some ?
-ArrayProto.Iterator = CreateFunction(undefined, function() {
-	return ArrayValues(this);
-});
-
-var ArrayIteratorPrototype = CreateObject(ObjectProto);
-
-ArrayIteratorPrototype.Value.next = CreateFunction(undefined, function next() {
-	var O = this;
-	if (!IsObject(O))
-		throw new TypeError('Object expected');
-	if (!('ArrayIteratorNextIndex' in O))
-		throw new TypeError('ArrayIterator expected');
-	var a = O.IteratedObject;
-	if (a === undefined)
-		return CreateIterResultObject(undefined, true);
-	var index = O.ArrayIteratorNextIndex,
-		itemKind = O.ArrayIterationKind,
-		lenValue = Get(a, 'length'),
-		len = ToLength(lenValue),
-		elementKey, elementValue, result;
-	if (index >= len) {
-		O.IteratedObject = undefined;
-		return CreateIterResultObject(undefined, true);
-	}
-	O.ArrayIteratorNextIndex = index + 1;
-	if (test(/value/, itemKind)) {
-		elementKey = ToString(index);
-		elementValue = Get(a, elementKey);
-	}
-	if (test(/key\+value/, itemKind)) {
-		result = CreateObject(ArrayProto, {
-			length: 2,
-			'0': index,
-			'1': elementValue
-		});
-		return CreateIterResultObject(result, false);
-	}
-	else if (test(/key/, itemKind))
-		return CreateIterResultObject(index, false);
-	if (!test(/value/, itemKind))
-		throw new Error('Expected itemKind to contain substring "value"');
-	return CreateIterResultObject(elementValue, false);
-});
-
-ArrayIteratorPrototype.Iterator = CreateFunction(undefined, function Iterator() {
-	return this;
-});
-

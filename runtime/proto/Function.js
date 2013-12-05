@@ -1,3 +1,38 @@
+var FunctionProto = CreatePrototype({
+
+	// TODO: make length setting work
+
+	insert: function insert(index) {
+		if (!IsCallable(this))
+			throw new TypeError('Function expected');
+		var index = ToUint32(index),
+			args = slice(arguments, 1);
+		// TODO: 
+		//return (...r) -> this(...[ ...r[0..index], ...args, r[index..inf] ]);
+	},
+
+	prepend: function prepend() {
+		if (!IsCallable(this))
+			throw new TypeError('Function expected');
+		var f = this,
+			preArgs = slice(arguments);
+		return CreateFunction(undefined, function() {
+			return Call(f, this, concat(preArgs, slice(arguments)));
+		});
+	},
+
+	append: function append() {
+		if (!IsCallable(this))
+			throw new TypeError('Function expected');
+		var f = this,
+			preArgs = slice(arguments);
+		return CreateFunction(undefined, function() {
+			return Call(f, this, concat(slice(arguments), preArgs));
+		});		
+	}
+
+});
+
 function CreateFunction(proto, jsfn, length) {
 	if (proto === undefined)
 		proto = FunctionProto;
@@ -133,7 +168,7 @@ function PartiallyApply(f, appliedArgs) {
 					unusedIndices[slot] = false;
 					push(args, arguments[slot]);
 				}
-				else if (slot != null && IsObject(slot) && Has(slot, $iterator)) {
+				else if (slot != null && IsObject(slot) && Has(slot, $$iterator)) {
 					insert = PartiallApplyIterable(
 						slot, arguments, unusedIndices
 					);

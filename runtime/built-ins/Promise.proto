@@ -1,24 +1,24 @@
-fn init(resolver | function) :{
-	P.PromiseInit(this, resolver);
-}
+// fn init(resolver | function) :{
+// 	P.PromiseInit(this, resolver);
+// }
 
-fn then(onFulfilled | function?, onRejected | function?) :{
-	return P.PromiseThen(this, onFulfilled, onRejected);
-}
+// fn then(onFulfilled | function?, onRejected | function?) :{
+// 	return P.PromiseThen(this, onFulfilled, onRejected);
+// }
 
-fn catch_(onRejected | function?) :{
-	return P.PromiseThen(this, undefined, onRejected);
-}
+// fn catch_(onRejected | function?) :{
+// 	return P.PromiseThen(this, undefined, onRejected);
+// }
 
-fn cast(value) :{
-	return P.CastToPromise(this, value);
-}
+// fn cast(value) :{
+// 	return P.CastToPromise(this, value);
+// }
 
-fn all(promises | object) :{
-	return P.PromiseAll(this, promises);
-}
+// fn all(promises | object) :{
+// 	return P.PromiseAll(this, promises);
+// }
 
-Promise := #{
-	init, then, catch: catch_,
-	static cast, static all
-};
+// Promise := #{
+// 	init, then, catch: catch_,
+// 	static cast, static all
+// };

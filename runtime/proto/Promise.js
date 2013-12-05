@@ -3,6 +3,32 @@
 
 // TODO: Is ReturnIfAbrupt supposed to throw or ignore an exception?
 
+var PromiseProto = CreatePrototype({
+
+	init: function init(resolver) {
+		if (!IsCallable(resolver))
+			throw new TypeError('Function expected');
+		PromiseInit(this, resolver);
+	},
+
+	then: function then(onFulfilled, onRejected) {
+		return PromiseThen(this, onFulfilled, onRejected);
+	},
+
+	catch: function catch_(onRejected) {
+		return PromiseThen(this, undefined, onRejected);
+	},
+
+	static_cast: function cast(value) {
+		return CastToPromise(this, value);
+	},
+
+	static_all: function all(promises) {
+		return PromiseAll(this, promises);
+	}
+
+});
+
 function CastToPromise(P, x) {
 	var proto, deferred;
 	if (IsPromise(x)) {

@@ -147,137 +147,160 @@ function GeneratorHandleDelegate(generator, method, arg) {
 	}
 }
 
-GeneratorProto.Iterator = CreateFunction(undefined, function() {
-	return this;
-});
+var GeneratorProto = CreatePrototype({
 
-function GeneratorContext() {
-	this.reset();
-}
-
-GeneratorContext.prototype = own({
-
-	next: undefined,
-	sent: undefined,
-	tryStack: undefined,
-	done: undefined,
-	delegate: undefined,
-
-	reset: function() {
-
-		this.next = 0;
-		this.sent = void 0;
-		this.tryStack = create(null);
-		this.tryStack.length = 0;
-		this.done = false;
-		this.delegate = null;
-
-		// Pre-initialize at least 20 temporary variables to enable hidden
-		// class optimizations for simple generators.
-		for (var tempIndex = 0, tempName;
-		hasOwn(this, tempName = 't' + tempIndex) || tempIndex < 20;
-		++tempIndex)
-			this[tempName] = null;
-
+	'@Iterator': function iterator() {
+		return this;
 	},
 
-	stop: function() {
-
-		this.done = true;
-
-		if (hasOwn(this, "thrown")) {
-			var thrown = this.thrown;
-			delete this.thrown;
-			throw thrown;
-		}
-
-		return this.rval;
-
+	init: function init() {
+		// TODO: Each generator's init should probably adjust it's arity
+		GeneratorInit(this, slice(arguments));
 	},
 
-	pushTry: function(catchLoc, finallyLoc, finallyTempVar) {
-		if (finallyLoc)
-			push(this.tryStack, {
-				finallyLoc: finallyLoc,
-				finallyTempVar: finallyTempVar
-			});
-		if (catchLoc)
-			push(this.tryStack, {
-				catchLoc: catchLoc
-			});
+	next: function next(value) {
+		return GeneratorNext(this, value);
 	},
 
-	popCatch: function(catchLoc) {
-		var lastIndex = this.tryStack.length - 1,
-			entry = this.tryStack[lastIndex];
-		if (entry && entry.catchLoc === catchLoc)
-			this.tryStack.length = lastIndex;
-	},
-
-	popFinally: function(finallyLoc) {
-		var lastIndex = this.tryStack.length - 1,
-			entry = this.tryStack[lastIndex];
-		if (!entry || !hasOwn(entry, "finallyLoc"))
-			entry = this.tryStack[--lastIndex];
-		if (entry && entry.finallyLoc === finallyLoc)
-			this.tryStack.length = lastIndex;
-	},
-
-	dispatchException: function(exception) {
-
-		var finallyEntries = create(null),
-			dispatched = false;
-		finallyEntries.length = 0;
-
-		if (this.done)
-			throw exception;
-
-		// Dispatch the exception to the "end" location by default.
-		this.thrown = exception;
-		this.next = "end";
-
-		for (var i = this.tryStack.length - 1; i >= 0; --i) {
-			var entry = this.tryStack[i];
-			if (entry.catchLoc) {
-				this.next = entry.catchLoc;
-				dispatched = true;
-				break;
-			} else if (entry.finallyLoc) {
-				push(finallyEntries, entry);
-				dispatched = true;
-			}
-		}
-
-		while (entry = pop(finallyEntries)) {
-			this[entry.finallyTempVar] = this.next;
-			this.next = entry.finallyLoc;
-		}
-
-	},
-
-	delegateYield: function(generator, resultName, nextLoc) {
-
-		var info = GeneratorNext(generator, this.sent);
-
-		if (!IsObject(info))
-			throw new TypeError('Object expected');
-
-		if (info.Value.done) {
-			this.delegate = null;
-			this[resultName] = info.Value.value;
-			this.next = nextLoc;
-
-			return GeneratorContinue;
-		}
-
-		this.delegate = {
-			generator: generator,
-			resultName: resultName,
-			nextLoc: nextLoc
-		};
-
-		return info.Value.value;
-
+	throw: function throw_(exception) {
+		return GeneratorThrow(this, exception);
 	}
 
 });
+
+var GeneratorContext = (function() {
+
+	function GeneratorContext() {
+		this.reset();
+	}
+
+	GeneratorContext.prototype = own({
+
+		next: undefined,
+		sent: undefined,
+		tryStack: undefined,
+		done: undefined,
+		delegate: undefined,
+
+		reset: function() {
+
+			this.next = 0;
+			this.sent = void 0;
+			this.tryStack = create(null);
+			this.tryStack.length = 0;
+			this.done = false;
+			this.delegate = null;
+
+			// Pre-initialize at least 20 temporary variables to enable hidden
+			// class optimizations for simple generators.
+			for (var tempIndex = 0, tempName;
+			hasOwn(this, tempName = 't' + tempIndex) || tempIndex < 20;
+			++tempIndex)
+				this[tempName] = null;
+
+		},
+
+		stop: function() {
+
+			this.done = true;
+
+			if (hasOwn(this, "thrown")) {
+				var thrown = this.thrown;
+				delete this.thrown;
+				throw thrown;
+			}
+
+			return this.rval;
+
+		},
+
+		pushTry: function(catchLoc, finallyLoc, finallyTempVar) {
+			if (finallyLoc)
+				push(this.tryStack, {
+					finallyLoc: finallyLoc,
+					finallyTempVar: finallyTempVar
+				});
+			if (catchLoc)
+				push(this.tryStack, {
+					catchLoc: catchLoc
+				});
+		},
+
+		popCatch: function(catchLoc) {
+			var lastIndex = this.tryStack.length - 1,
+				entry = this.tryStack[lastIndex];
+			if (entry && entry.catchLoc === catchLoc)
+				this.tryStack.length = lastIndex;
+		},
+
+		popFinally: function(finallyLoc) {
+			var lastIndex = this.tryStack.length - 1,
+				entry = this.tryStack[lastIndex];
+			if (!entry || !hasOwn(entry, "finallyLoc"))
+				entry = this.tryStack[--lastIndex];
+			if (entry && entry.finallyLoc === finallyLoc)
+				this.tryStack.length = lastIndex;
+		},
+
+		dispatchException: function(exception) {
+
+			var finallyEntries = create(null),
+				dispatched = false;
+			finallyEntries.length = 0;
+
+			if (this.done)
+				throw exception;
+
+			// Dispatch the exception to the "end" location by default.
+			this.thrown = exception;
+			this.next = "end";
+
+			for (var i = this.tryStack.length - 1; i >= 0; --i) {
+				var entry = this.tryStack[i];
+				if (entry.catchLoc) {
+					this.next = entry.catchLoc;
+					dispatched = true;
+					break;
+				} else if (entry.finallyLoc) {
+					push(finallyEntries, entry);
+					dispatched = true;
+				}
+			}
+
+			while (entry = pop(finallyEntries)) {
+				this[entry.finallyTempVar] = this.next;
+				this.next = entry.finallyLoc;
+			}
+
+		},
+
+		delegateYield: function(generator, resultName, nextLoc) {
+
+			var info = GeneratorNext(generator, this.sent);
+
+			if (!IsObject(info))
+				throw new TypeError('Object expected');
+
+			if (info.Value.done) {
+				this.delegate = null;
+				this[resultName] = info.Value.value;
+				this.next = nextLoc;
+
+				return GeneratorContinue;
+			}
+
+			this.delegate = {
+				generator: generator,
+				resultName: resultName,
+				nextLoc: nextLoc
+			};
+
+			return info.Value.value;
+
+		}
+
+	});
+
+	return GeneratorContext;
+
+})();

@@ -1,7 +1,7 @@
-fn init(from, to) :{
-	// TODO
-}
+// fn init(from, to) :{
+// 	// TODO
+// }
 
-Range := #{
-	init
-};
+// Range := #{
+// 	init
+// };

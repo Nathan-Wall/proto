@@ -1,3 +1,46 @@
+var reflect = CreatePrototype({
+
+	getDescriptor: function getDescriptor(obj, key) {
+		return GetDescriptor(obj, key);
+	},
+
+	getOwnDescriptor: function getOwnPropertyDescriptor(obj, key) {
+		return GetOwnDescriptor(obj, key);
+	},
+
+	has: function has(obj, key) {
+		return Has(obj, key);
+	},
+
+	hasOwn: function hasOwn(obj, key) {
+		return HasOwn(obj, key);
+	},
+
+	isCallable: function isCallable(value) {
+		return IsCallable(value);
+	},
+
+	keys: function keys(value) {
+		return GetKeys(value);
+	},
+
+	ownKeys: function ownKeys(value) {
+		return GetOwnKeys(value);
+	},
+
+	isObject: function isObject(value) {
+		return IsObject(value);
+	},
+
+	define: function define(obj, key, desc) {
+		// Note: It makes sense for Proto to examine inherited properties in
+		// the descriptors, although it doesn't for JS, because it's trivial to
+		// create dictionaries in Proto.
+		// TODO
+	}
+
+});
+
 // properties will always be a native JS object
 function CreateObject(proto, properties, staticProps, extendedProps) {
 	var wrapper, protoValue;
@@ -14,7 +57,7 @@ function CreateObject(proto, properties, staticProps, extendedProps) {
 			throw new TypeError('Object expected');
 	}
 	wrapper = create(proto);
-	wrapper.Value = simile.like(protoValue, properties);
+	wrapper.Value = like(protoValue, properties);
 	if (staticProps !== undefined) {
 		if (Object(staticProps) !== staticProps)
 			throw new TypeError('Object expected');
@@ -40,6 +83,38 @@ function CreatePrimitiveWrapper(proto) {
 	return wrapper;
 }
 
+function CreatePrototype(properties) {
+	var props = keys(properties),
+		staticProps,
+		extendedProps = [ ],
+		symbols = create(null),
+		key, proto, i;
+	for (i = 0; i < props.length; i++) {
+		key = props[i];
+		if (charAt(key, 0) == '@') {
+			symbols[stringSlice(key, 1)] = CreateFunction(
+				undefined, properties[key]
+			);
+			delete properties[key];
+		}
+		else if (test(/^static_/, key)) {
+			if (staticProps === undefined)
+				staticProps = create(null);
+			staticProps[stringSlice(key, 7)] = properties[key];
+			delete properties[key];
+		}
+		else
+			properties[key] = CreateFunction(undefined, properties[key]);
+	}
+	proto = CreateObject(undefined, properties, staticProps, extendedProps);
+	props = keys(symbols);
+	for (i = 0; i < props.lenght; i++) {
+		key = props[i];
+		proto[key] = symbols[key];
+	}
+	return proto;
+}
+
 function IsWrapper(value) {
 	if (Object(value) !== value)
 		return false;
@@ -54,6 +129,14 @@ function IsObject(value) {
 
 function IsPrimitiveWrapper(value) {
 	return IsWrapper(value) && !!value.Primitive;
+}
+
+function ToComparable(value) {
+	if (!IsWrapper(value))
+		return value;
+	if (Has(value, $$toComparable))
+		return Call(Get(value, $$toComparable), value);
+	throw new TypeError('Object is not comparable');
 }
 
 function Is(a, b) {
@@ -81,7 +164,7 @@ function IsLike(obj, proto) {
 		return true;
 	if (!IsObject(proto))
 		return false;
-	return simile.isLike(obj.Value, proto.Value);
+	return isPrototypeOf(proto.Value, obj.Value);
 }
 
 function Own(obj) {
@@ -380,6 +463,29 @@ function Delete(obj, key) {
 	return delete O[K];
 }
 
+function GetKeys(obj) {
+	var keys, allKeys, set, key, i, o;
+	if (obj === undefined || obj === null || !IsObject(obj))
+		return CreateArray(ArrayProto);
+	allKeys = create(null);
+	allKeys.length = 0;
+	set = create(null);
+	o = obj;
+	do {
+		keys = getOwnPropertyNames(o.Value);
+		for (i = 0; i < keys.length; i++) {
+			key = keys[i];
+			if (!(key in set)) {
+				set[key] = true;
+				push(allKeys, keys[i]);
+			}
+		}
+	} while (o = getPrototypeOf(o));
+	if (hasOwn(obj, 'Static'))
+		pushAll(allKeys, getOwnPropertyNames(obj.Static));
+	return CreateArray(ArrayProto, allKeys);
+}
+
 function GetOwnKeys(obj) {
 	var keys;
 	if (obj === undefined || obj === null || !IsObject(obj))
@@ -452,6 +558,62 @@ function GetOwnDescriptor(obj, key) {
 	return undefined;
 }
 
+function like(proto, props) {
+
+	if (proto === undefined)
+		proto = null;
+
+	if (props === undefined)
+		return create(proto);
+
+	return create(proto, propsToDescriptors(own(props), proto));
+
+}
+
+function propsToDescriptors(props, base) {
+
+	var desc = create(null),
+		keys = getUncommonPropertyNames(props, base),
+		key, d;
+
+	for (var i = 0; i < keys.length; i++) {
+		key = keys[i];
+		d = own(getOwnPropertyDescriptor(props, key));
+		d.enumerable = false;
+		desc[key] = d;
+	}
+
+	return desc;
+
+}
+
+function getUncommonPropertyNames(from, compareWith) {
+
+	var namesMap = create(null),
+		names = concatUncommonNames(from, compareWith),
+		keys = create(null), name;
+	keys.length = 0;
+
+	for (var i = 0; i < names.length; i++) {
+		name = names[i];
+		if (!namesMap[name]) {
+			namesMap[name] = true;
+			push(keys, name);
+		}
+	}
+
+	return keys;
+
+}
+
+function concatUncommonNames(from, compareWith) {
+	if (Object(from) != from
+		|| from === compareWith
+		|| isPrototypeOf(from, compareWith)) return [ ];
+	return concat(getOwnPropertyNames(from),
+		concatUncommonNames(getPrototypeOf(from), compareWith));
+}
+
 function Like(obj) {
 	if (obj === undefined)
 		obj = null;
@@ -470,6 +632,38 @@ function New(obj, args) {
 	return newObj;
 }
 
+function mixin(mixinWhat, mixinWith) {
+
+	if (Object(mixinWhat) != mixinWhat)
+		throw new TypeError('Object expected');
+
+	if (!isExtensible(mixinWhat))
+		throw new Error('Cannot mixin on non-exensible object');
+
+	if (Object(mixinWith) != mixinWith)
+		throw new TypeError('Object expected');
+
+	var keys = getUncommonPropertyNames(mixinWith, mixinWhat),
+		key, whatDesc, withDesc;
+
+	for (var i = 0; i < keys.length; i++) {
+		key = keys[i];
+		whatDesc = own(getPropertyDescriptor(mixinWhat, name));
+		withDesc = own(getPropertyDescriptor(mixinWith, name));
+
+		if (!whatDesc || whatDesc.configurable)
+			// If mixinWhat does not already have the property, or if mixinWhat
+			// has the property and it's configurable, add it as is.
+			define(mixinWhat, name, withDesc);
+		else if (whatDesc.writable && 'value' in withDesc)
+			// If the property is writable and the withDesc has a value, write the value.
+			mixinWhat[name] = withDesc.value;
+	}
+
+	return mixinWhat;
+
+}
+
 function Mixin(to, from) {
 	if (!IsObject(to))
 		throw new TypeError('Object expected');
@@ -478,11 +672,11 @@ function Mixin(to, from) {
 		return to;
 	if (!IsObject(from))
 		throw new TypeError('Object expected');
-	simile.mixin(to.Value, from.Value);
+	mixin(to.Value, from.Value);
 	if (hasOwn(from, 'Static')) {
 		if (!hasOwn(to, 'Static'))
 			to.Static = create(null);
-		simile.mixin(to.Static, from.Static);
+		mixin(to.Static, from.Static);
 	}
 	return to;
 }

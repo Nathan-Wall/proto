@@ -5,7 +5,7 @@ function GetIterator(iterable) {
 	var iterator, I;
 	if (!IsObject(iterable))
 		throw new TypeError('Object expected');
-	I = Get(iterable, $iterator);
+	I = Get(iterable, $$iterator);
 	if (!IsCallable(I))
 		throw new TypeError('Iterable expected');
 	iterator = Call(I, iterable, [ ]);

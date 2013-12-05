@@ -13,30 +13,36 @@ function CreateRange(proto, from, to) {
 	return obj;
 }
 
-RangeProto.Iterator = CreateFunction(undefined, function Iterator() {
-	if (!IsObject(this))
-		throw new TypeError('Object expected');
-	if (!('RangeFrom' in this) || !('RangeTo' in this))
-		throw new TypeError('Range expected');
-	var from = this.RangeFrom,
-		to = this.RangeTo,
-		iter = CreateObject(RangeIteratorProto);
-	iter.RangeIteratorCurrent = from;
-	iter.RangeIteratorTo = to;
-	iter.RangeIteratorStep = from < to ? 1 : -1;
-	return iter;
-});
+var RangeProto = (function() {
 
-RangeProto.Get = function Get(obj, receiver) {
-	if (!IsObject(this))
-		throw new TypeError('Object expected');
-	if (!('RangeFrom' in this) || !('RangeTo' in this))
-		throw new TypeError('Range expected');
-	return Slice(obj, this.RangeFrom, this.RangeTo, receiver);
-};
-RangeProto.GetOwn = function GetOwn(obj, receiver) {
-	return SliceOwn(obj, this.RangeFrom, this.RangeTo, receiver);
-};
+	var RangeProto = CreateObject(ObjectProto);
+
+	RangeProto.Iterator = CreateFunction(undefined, function Iterator() {
+		if (!IsObject(this))
+			throw new TypeError('Object expected');
+		if (!('RangeFrom' in this) || !('RangeTo' in this))
+			throw new TypeError('Range expected');
+		var from = this.RangeFrom,
+			to = this.RangeTo,
+			iter = CreateObject(RangeIteratorProto);
+		iter.RangeIteratorCurrent = from;
+		iter.RangeIteratorTo = to;
+		iter.RangeIteratorStep = from < to ? 1 : -1;
+		return iter;
+	});
+
+	RangeProto.Get = function Get(obj, receiver) {
+		if (!IsObject(this))
+			throw new TypeError('Object expected');
+		if (!('RangeFrom' in this) || !('RangeTo' in this))
+			throw new TypeError('Range expected');
+		return Slice(obj, this.RangeFrom, this.RangeTo, receiver);
+	};
+	RangeProto.GetOwn = function GetOwn(obj, receiver) {
+		return SliceOwn(obj, this.RangeFrom, this.RangeTo, receiver);
+	};
+
+})();
 
 // RangeProto.Set = function Set(obj, value, receiver) {
 // 	// TODO

@@ -1,12 +1,12 @@
 // import { @get, @getOwn, @set, @setOwn, @delete } from '@symbols';
 
-fn init(value) :{
-	P.SymbolInit(this, value);
-}
+// fn init(value) :{
+// 	P.SymbolInit(this, value);
+// }
 
-Symbol := #{
-	init
-};
+// Symbol := #{
+// 	init
+// };
 
 // Symbol := {
 // 	init,

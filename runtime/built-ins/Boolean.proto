@@ -1,7 +1,7 @@
-fn toComparable() :{
-	return !!this;
-}
+// fn toComparable() :{
+// 	return !!this;
+// }
 
-Boolean := {
-	@toComparable: toComparable
-};
+// Boolean := {
+// 	@toComparable: toComparable
+// };

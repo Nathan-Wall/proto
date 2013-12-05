@@ -1,3 +1,11 @@
+var BooleanProto = CreatePrototype({
+
+	'@ToComparable': function toComparable() {
+		return ToBoolean(this);
+	}
+
+});
+
 function CreateBoolean(proto, value) {
 	var v = ToBoolean(value);
 	if (proto === undefined)

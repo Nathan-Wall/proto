@@ -1,3 +1,11 @@
+var SlotProto = CreatePrototype({
+
+	init: function init(value) {
+		SlotInit(this, value, false);
+	}
+
+});
+
 function CreateSlot(proto, value, rest) {
 	var obj;
 	if (proto === undefined)

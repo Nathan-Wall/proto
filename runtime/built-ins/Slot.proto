@@ -1,7 +1,7 @@
-fn init(value) :{
-	P.SlotInit(this, value, false);
-}
+// fn init(value) :{
+// 	P.SlotInit(this, value, false);
+// }
 
-Slot := #{
-	init
-};
+// Slot := #{
+// 	init
+// };

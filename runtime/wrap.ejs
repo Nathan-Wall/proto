@@ -3,33 +3,10 @@
 	'use strict';
 
 	var $__proto__$ = (function() {
-
-		<% include simile %>
-		<% include proto/proto %>
-
-		return proto;
-
+		<%- runtime %>
+		return runtime;
 	})();
 
-	(function() {
-
-		<% include definitions %>
-
-		var boolean, number, int, uint, string, function_, object, setTimeout;
-
-		(function() {
-
-			<% include definitions %>
-
-			var P = $__proto__$.toWrapped();
-			<%- _transpileFile('built-ins/built-ins.proto') %>
-
-		})();
-
-		(function() {
-			<%- source %>
-		})();
-
-	})();
+	<%- source %>
 
 })(this);
