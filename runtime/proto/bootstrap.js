@@ -42,12 +42,18 @@ var Object = global.Object,
 	stringSlice = lazyBind(String.prototype.slice),
 	test = lazyBind(RegExp.prototype.test),
 
-	consoleLog = bind(console.log, console),
+	consoleLog = bind(global.console.log, global.console),
 
 	MAX_PRECISION = pow(2, 53),
 	MAX_UINT = pow(2, 32) - 1,
 
-	ObjectProto = CreateObject(null),
+	// This is being done instead of `CreateObject(null)` to avoid a cycle which
+	// is very difficult to deal with in the builder.
+	ObjectProto = (function() {
+		var o = create(null);
+		o.Value = create(null);
+		return o;
+	})(),
 	NumberProto = CreateObject(ObjectProto),
 	StringProto = CreateObject(ObjectProto),
 	DateProto = CreateObject(ObjectProto),
