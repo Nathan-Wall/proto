@@ -32,6 +32,8 @@ var Identifiers = (function() {
 		);
 	};
 
+	return Identifiers;
+
 })();
 
 function toIdentifierName(r, chars) {

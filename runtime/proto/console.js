@@ -47,6 +47,8 @@ function CallConsoleMethod(f, values) {
 		value = values[i];
 		if (IsWrapper(value))
 			push(args, value.Value);
+		else if (value == null)
+			push(args, '[nil]');
 		else
 			push(args, value);
 	}

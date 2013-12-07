@@ -11,40 +11,40 @@ var global_Object = ObjectProto,
 	global_Promise = PromiseProto,
 	global_reflect = reflect,
 	global_inf = Infinity,
-	global_console = console;
+	global_console = console,
 
-function global_boolean(value) {
-	return ToBoolean(value);
-}
+	global_boolean = CreateFunction(undefined, function(value) {
+		return ToBoolean(value);
+	}),
 
-function global_number(value) {
-	return ToNumber(value);
-}
+	global_number = CreateFunction(undefined, function(value) {
+		return ToNumber(value);
+	}),
 
-function global_int(value) {
-	return ToInteger(value);
-}
+	global_int = CreateFunction(undefined, function(value) {
+		return ToInteger(value);
+	}),
 
-// TODO: Rename `whole` and make upperbound larger than 2^32?
-// TODO: Provide `natural` as well?
-function global_uint(value) {
-	return ToUint32(value);
-}
-	
-function global_string(value) {
-	return ToString(value);
-}
+	// TODO: Rename `whole` and make upperbound larger than 2^32?
+	// TODO: Provide `natural` as well?
+	global_uint = CreateFunction(undefined, function(value) {
+		return ToUint32(value);
+	}),
 
-function global_function(value) {
-	if (!IsCallable(value))
-		throw new TypeError('Function expected');
-	return value;
-}
+	global_string = CreateFunction(undefined, function(value) {
+		return ToString(value);
+	}),
 
-function global_object(value) {
-	return ToObject(value);
-}
+	global_function = CreateFunction(undefined, function(value) {
+		if (!IsCallable(value))
+			throw new TypeError('Function expected');
+		return value;
+	}),
 
-function global_setTimeout(f, interval) {
-	return SetTimeout(f, interval);
-}
+	global_object = CreateFunction(undefined, function(value) {
+		return ToObject(value);
+	}),
+
+	global_setTimeout = CreateFunction(undefined, function(value) {
+		return SetTimeout(f, interval);
+	});

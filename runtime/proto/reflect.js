@@ -108,7 +108,7 @@ function CreatePrototype(properties) {
 	}
 	proto = CreateObject(undefined, properties, staticProps, extendedProps);
 	props = keys(symbols);
-	for (i = 0; i < props.lenght; i++) {
+	for (i = 0; i < props.length; i++) {
 		key = props[i];
 		proto[key] = symbols[key];
 	}
@@ -206,12 +206,16 @@ function Own(obj) {
 }
 
 function Has(obj, key) {
-	var K;
+	var K, HasF;
 	if (!IsObject(obj))
 		return false;
 	if (IsWrapper(key)) {
-		if ('Has' in key)
-			return key.Has(obj);
+		if ('Has' in key) {
+			HasF = key.Has;
+			if (!IsCallable(HasF))
+				throw new TypeError('Function expected');
+			return Call(HasF, key, [ obj ]);
+		}
 		else
 			throw new Error(
 				'Object cannot be used as a property key in has operation'
@@ -223,12 +227,16 @@ function Has(obj, key) {
 }
 
 function HasOwn(obj, key) {
-	var K;
+	var K, HasF;
 	if (!IsObject(obj))
 		return false;
 	if (IsWrapper(key)) {
-		if ('HasOwn' in key)
-			return key.HasOwn(obj);
+		if ('HasOwn' in key) {
+			HasF = key.HasOwn;
+			if (!IsCallable(HasF))
+				throw new TypeError('Function expected');
+			return Call(HasF, key, [ obj ]);
+		}
 		else
 			throw new Error(
 				'Object cannot be used as a property key in has operation'
@@ -248,8 +256,12 @@ function Get(obj, key, receiver) {
 	if (receiver === null)
 		receiver = undefined;
 	if (IsWrapper(key)) {
-		if ('Get' in key)
-			return key.Get(obj, receiver);
+		if ('Get' in key) {
+			GetF = key.Get;
+			if (!IsCallable(GetF))
+				throw new TypeError('Function expected');
+			return Call(GetF, key, [ obj, receiver ]);
+		}
 		else
 			throw new Error(
 				'Object cannot be used as a property key in get operation'
@@ -265,7 +277,7 @@ function Get(obj, key, receiver) {
 			if ('ProxyJs' in obj)
 				return proxyJs(O[K]);
 			else
-				return O[K];
+				return IfAccessorGet(O[K], obj);
 		}
 		else {
 			desc = getPropertyDescriptor(O, K);
@@ -282,18 +294,14 @@ function Get(obj, key, receiver) {
 					GetF = CreateFunction(null, get);
 					return proxyJs(Call(GetF, receiver, [ ]));
 				}
-				else {
-					GetF = get.__ProtoFunction__;
-					if (typeof GetF != 'function')
-						throw new TypeError('Function expected');
-					return Call(GetF, receiver, [ ]);
-				}
+				else
+					throw new Error('Unexpected getter');
 			}
 			else if (hasOwn(desc, 'value')) {
 				if (obj.ProxyJs)
 					return proxyJs(desc.value);
 				else
-					return desc.value;
+					return IfAccessorGet(desc.value, obj);
 			}
 			else
 				return undefined;
@@ -310,25 +318,23 @@ function Get(obj, key, receiver) {
 	desc = GetDescriptor(proto, K);
 	if (desc === undefined || desc.static)
 		return undefined;
-	if (hasOwn(desc, 'get')) {
-		get = desc.get;
-		if (typeof get != 'function')
-			throw new TypeError('Function expected');
-		return Call(get, receiver, [ ]);
-	}
 	else if (hasOwn(desc, 'value'))
-		return desc.value;
+		return IfAccessorGet(desc.value, obj);
 	else
-		return undefined;
+		throw new Error('Unexpected accessor');
 }
 
 function GetOwn(obj, key, receiver) {
-	var K;
+	var K, GetF;
 	if (obj === null || obj === undefined)
 		return undefined;
 	if (IsWrapper(key)) {
-		if ('GetOwn' in key)
-			return key.GetOwn(obj, receiver);
+		if ('GetOwn' in key) {
+			GetF = key.GetOwn;
+			if (!IsCallable(GetF))
+				throw new TypeError('Function expected');
+			return Call(GetF, key, [ obj, receiver ]);
+		}
 		else
 			throw new Error(
 				'Object cannot be used as a property key in get operation'
@@ -351,8 +357,11 @@ function Set(obj, key, value, receiver) {
 	// TODO: Symbol setters
 	if (IsWrapper(key)) {
 		if ('Set' in key) {
+			SetF = key.Set;
+			if (!IsCallable(SetF))
+				throw new TypeError('Function expected');
 			value = handle(value);
-			key.Set(obj, value, receiver);
+			Call(SetF, key, [ obj, value, receiver ]);
 			return value;
 		}
 		else
@@ -366,7 +375,15 @@ function Set(obj, key, value, receiver) {
 	else
 		O = obj.Value;
 	if (receiver === null || receiver === undefined) {
-		O[K] = handle(value);
+		if (obj.ProxyJs) {
+			O[K] = UnwrapProto(value);
+		} else {
+			set = O[K];
+			if (IsAccessor(set))
+				CallAccessorSet(set, obj, value);
+			else
+				O[K] = value;
+		}
 		return value;
 	}
 	desc = getPropertyDescriptor(O, K);
@@ -380,22 +397,20 @@ function Set(obj, key, value, receiver) {
 			// TODO: Can this just be
 			//     call(set, receiver, value);
 			// ?
+			// TODO: Does there need to be a `UnwrapProto` call round value?
 			SetF = CreateFunction(null, set);
 			Call(SetF, receiver, [ value ]);
 			return  value;
 		}
-		else {
-			if (typeof set != 'function')
-				throw new TypeError('Function expected');
-			SetF = set.__ProtoFunction__;
-			if (typeof SetF != 'function')
-				throw new TypeError('Function expected');
-			Call(SetF, receiver, [ value ]);
-			return value;
-		}
+		else
+			throw new Error('Unexpected setter');
 	}
 	else if (hasOwn(desc, 'value')) {
-		O[K] = handle(value);
+		set = O[K];
+		if (IsAccessor(set))
+			CallAccessorSet(set, receiver, value);
+		else
+			O[K] = handle(value);
 		return value;
 	}
 	else
@@ -406,15 +421,18 @@ function Set(obj, key, value, receiver) {
 }
 
 function SetOwn(obj, key, value, receiver) {
-	var K;
+	var K, SetF;
 	if (obj === null || obj === undefined)
 		throw new TypeError('Cannot set property of nil');
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
 	if (IsWrapper(key)) {
 		if ('SetOwn' in key) {
+			SetF = key.SetOwn;
+			if (!IsCallable(SetF))
+				throw new TypeError('Function expected');
 			value = handle(value);
-			key.SetOwn(obj, value, receiver);
+			Call(SetF, key, [ obj, value, receiver ]);
 			return value;
 		}
 		else
@@ -447,8 +465,12 @@ function Delete(obj, key) {
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
 	if (IsWrapper(key)) {
-		if ('Delete' in key)
-			return !!key.Delete(obj);
+		if ('Delete' in key) {
+			DeleteF = key.Delete;
+			if (!IsCallable(DeleteF))
+				throw new TypeError('Function expected');
+			return !!Call(DeleteF, key, [ obj ]);
+		}
 		else
 			throw new TypeError(
 				'Object cannot be used as a property key in delete'
@@ -691,7 +713,7 @@ function Define(obj, kind, key, value, isStatic, writable, configurable) {
 	// TODO: Permit this operation on wrappers?
 	if (!IsObject(obj))
 		throw new TypeError('Object expected');
-	var O, desc = create(null), prop,
+	var O, desc = create(null), d, prop,
 		isSymbol = IsWrapper(key) && 'SymbolId' in key;
 	if (isStatic) {
 		prop = 'Static';
@@ -711,27 +733,26 @@ function Define(obj, kind, key, value, isStatic, writable, configurable) {
 		key = key.SymbolId;
 	else if (typeof key != 'string')
 		throw new TypeError('Expected string or symbol');
-	if (kind == 'value')
+	if (kind == 'value') {
 		desc.value = value;
-	else if (kind == 'get') {
-		if (!IsCallable(value))
-			throw new TypeError('Function expected');
-		desc.get = function() {
-			return Call(value, this, [ ]);
-		};
-		desc.get.__ProtoFunction__ = value;
+		desc.writable = ToBoolean(writable);
 	}
-	else if (kind == 'set') {
+	// TODO: Make accessors correctly pass through membranes (does this work?)
+	else if (kind == 'get' || kind == 'set') {
 		if (!IsCallable(value))
 			throw new TypeError('Function expected');
-		desc.set = function(v) {
-			return Call(value, this, [ v ]);
-		};
-		desc.get.__ProtoFunction__ = value;
+		d = getOwnPropertyDescriptor(O, key);
+		if (d !== undefined && IsAccessor(d.value))
+			desc.value = d.value;
+		else
+			desc.value = CreateAccessor();
+		if (kind == 'get')
+			DefineAccessorGet(desc.value, value);
+		else
+			DefineAccessorSet(desc.value, value);
 	}
 	else
 		throw new Error('Invalid kind: "' + kind + '"');
-	desc.writable = ToBoolean(writable);
 	desc.configurable = ToBoolean(configurable);
 	desc.enumerable = false;
 	defineProperty(O, key, desc);
