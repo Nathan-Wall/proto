@@ -24,7 +24,7 @@ http.createServer(function(req, res) {
 				return res.end('File read error');
 			res.setHeader('Content-type', 'text/javascript');
 			res.end(
-				proto.transpile(String(source), path.dirname(file))
+				proto.compile(String(source), path.dirname(file))
 			);
 		});
 	else

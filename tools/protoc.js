@@ -12,5 +12,5 @@ program
 file = program.args.shift();
 
 process.stdout.write(
-	proto.transpile(fs.readFileSync(file))
+	proto.compile(fs.readFileSync(file))
 );
