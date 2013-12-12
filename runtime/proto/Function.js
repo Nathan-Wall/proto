@@ -33,24 +33,24 @@ var FunctionProto = CreatePrototype({
 
 });
 
-function CreateFunction(proto, jsfn, length) {
+function CreateFunction(proto, jsfn, arity) {
 	if (proto === undefined)
 		proto = FunctionProto;
 	var obj = CreateObject(proto);
-	FunctionInit(obj, jsfn, length);
+	FunctionInit(obj, jsfn, arity);
 	return obj;
 }
 
-function FunctionInit(obj, jsfn, length) {
+function FunctionInit(obj, jsfn, arity) {
 	if (typeof jsfn != 'function')
 		throw new TypeError('Function expected');
-	if (length === undefined)
-		length = jsfn.length;
+	if (arity === undefined)
+		arity = jsfn.length;
 	else
-		length = ToNumber(length) >>> 0;
+		arity = ToUint32(arity);
 	obj.Function = jsfn;
-	define(obj.Value, 'length', {
-		value: length,
+	define(obj.Value, 'arity', {
+		value: arity,
 		writable: true,
 		enumerable: false,
 		configurable: true

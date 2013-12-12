@@ -1,4 +1,4 @@
-function CreateAsyncFunction(proto, progeneratedFn) {
+function CreateAsyncFunction(proto, progeneratedFn, arity) {
 	var genF = CreateGeneratorFunction(null, progeneratedFn);
 	return CreateFunction(proto, function() {
 		var gen = Call(genF, this, slice(arguments)),
@@ -10,7 +10,7 @@ function CreateAsyncFunction(proto, progeneratedFn) {
 		);
 		AsyncNext(gen);
 		return promise;
-	});
+	}, arity);
 }
 
 function AsyncNext(gen, send) {
