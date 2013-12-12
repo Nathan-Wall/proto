@@ -1,3 +1,30 @@
+var StringProto = CreatePrototype({
+
+	init: function(value) {
+		if (!IsObject(this))
+			throw new TypeError('Object expected');
+		if (value === undefined)
+			value = '';
+		else
+			value = ToString(value);
+		for (var i = 0; i < value.length; i++) {
+			define(this.Value, i, {
+				value: value[i],
+				enumerable: true,
+				writable: false,
+				configurable: false
+			});
+		}
+		define(this.Value, 'length', {
+			value: value.length,
+			enumerable: false,
+			writable: false,
+			configurable: false
+		});
+	}
+
+});
+
 function CreateString(proto, value) {
 	var v = ToString(value);
 	if (proto === undefined)

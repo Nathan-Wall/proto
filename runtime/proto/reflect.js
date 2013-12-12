@@ -136,7 +136,7 @@ function ToComparable(value) {
 		return value;
 	if (Has(value, $$toComparable))
 		return Call(Get(value, $$toComparable), value);
-	throw new TypeError('Object is not comparable');
+	throw new TypeError('Value is not comparable');
 }
 
 function Is(a, b) {
@@ -268,6 +268,11 @@ function Get(obj, key, receiver) {
 			);
 	}
 	K = ToString(key);
+	// TODO: Make operations like `'string'.length` more performant, without
+	// having to create a new string object each time.
+	T = typeof obj;
+	if (T == 'string')
+		obj = New(StringProto, [ obj ]);
 	if (IsWrapper(obj)) {
 		if (hasOwn(obj, 'Static') && hasOwn(obj.Static, K))
 			O = obj.Static;
@@ -307,19 +312,18 @@ function Get(obj, key, receiver) {
 				return undefined;
 		}
 	}
-	switch (T = typeof obj) {
+	switch (T) {
 		case 'boolean': proto = BooleanProto; break;
 		case 'number': proto = NumberProto; break;
-		case 'string': proto = StringProto; break;
 		default: throw new TypeError('Unexpected type "' + T + '"');
 	}
 	if (receiver === undefined)
 		receiver = obj;
 	desc = GetDescriptor(proto, K);
-	if (desc === undefined || desc.static)
+	if (desc === undefined || desc.Value.static)
 		return undefined;
-	else if (hasOwn(desc, 'value'))
-		return IfAccessorGet(desc.value, obj);
+	else if (hasOwn(desc.Value, 'value'))
+		return IfAccessorGet(desc.Value.value, obj);
 	else
 		throw new Error('Unexpected accessor');
 }

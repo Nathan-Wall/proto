@@ -57,7 +57,6 @@ var Object = global.Object,
 		return o;
 	})(),
 	NumberProto = CreateObject(ObjectProto),
-	StringProto = CreateObject(ObjectProto),
 	DateProto = CreateObject(ObjectProto),
 
 	$$get = CreateSymbolPrimitive('@get', 'Get'),

@@ -85,15 +85,10 @@ function GetFunction(F) {
 }
 
 function CallMethod(obj, key, args) {
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
 	return Call(Get(obj, key), obj, args);
 }
 
 function CallOwnMethod(obj, key, args) {
-	var K;
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
 	return Call(GetOwn(obj, key), obj, args);
 }
 
