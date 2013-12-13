@@ -60,20 +60,8 @@ var Object = global.Object,
 	NumberProto = CreateObject(ObjectProto),
 	DateProto = CreateObject(ObjectProto),
 
-	$$get = CreateSymbolPrimitive('@get', 'Get'),
-	$$getOwn = CreateSymbolPrimitive('@getOwn', 'GetOwn'),
-	$$has = CreateSymbolPrimitive('@has', 'Has'),
-	$$hasOwn = CreateSymbolPrimitive('@hasOwn', 'HasOwn'),
-	$$set = CreateSymbolPrimitive('@set', 'Set'),
-	$$setOwn = CreateSymbolPrimitive('@setOwn', 'SetOwn'),
-	$$delete = CreateSymbolPrimitive('@delete', 'Delete'),
-	$$iterator = CreateSymbolPrimitive('@iterator', 'Iterator'),
-	$$toComparable = CreateSymbolPrimitive('@toComparable', 'ToComparable'),
-
 	I = function I(value) { return value; },
-	NOOP = function() { },
-
-	identifiers = new Identifiers();
+	NOOP = function() { };
 
 // TODO: Probably replace with ToIterable once iterables are worked out
 function ToArray(value) {

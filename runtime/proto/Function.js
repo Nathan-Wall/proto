@@ -33,15 +33,15 @@ var FunctionProto = CreatePrototype({
 
 });
 
-function CreateFunction(proto, jsfn, arity) {
+function CreateFunction(proto, jsfn, name, arity) {
 	if (proto === undefined)
 		proto = FunctionProto;
 	var obj = CreateObject(proto);
-	FunctionInit(obj, jsfn, arity);
+	FunctionInit(obj, jsfn, name, arity);
 	return obj;
 }
 
-function FunctionInit(obj, jsfn, arity) {
+function FunctionInit(obj, jsfn, name, arity) {
 	if (typeof jsfn != 'function')
 		throw new TypeError('Function expected');
 	if (arity === undefined)
@@ -49,11 +49,17 @@ function FunctionInit(obj, jsfn, arity) {
 	else
 		arity = ToUint32(arity);
 	obj.Function = jsfn;
+	define(obj.Value, 'name', {
+		value: name,
+		writable: false,
+		enumerable: false,
+		configurable: false
+	});
 	define(obj.Value, 'arity', {
 		value: arity,
-		writable: true,
+		writable: false,
 		enumerable: false,
-		configurable: true
+		configurable: false
 	});
 }
 
