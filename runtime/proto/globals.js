@@ -11,6 +11,7 @@ var global_Object = ObjectProto,
 	global_Promise = PromiseProto,
 	global_reflect = reflect,
 	global_inf = Infinity,
+	global_NaN = NaN,
 	global_console = console,
 
 	global_boolean = CreateFunction(undefined, function(value) {
@@ -47,4 +48,10 @@ var global_Object = ObjectProto,
 
 	global_setTimeout = CreateFunction(undefined, function(value) {
 		return SetTimeout(f, interval);
+	}),
+
+	global_Math = CreatePrototype({
+		ceil: function(value) {
+			return ceil(value);
+		}
 	});

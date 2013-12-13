@@ -72,3 +72,7 @@ var RangeIteratorProto = CreateObject(undefined, {
 		});
 	})
 });
+
+function ModifyRangeStep(range, step) {
+	// TODO	
+}

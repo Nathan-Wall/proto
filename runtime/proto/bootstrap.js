@@ -23,6 +23,7 @@ var Object = global.Object,
 	floor = Math.floor,
 	abs = Math.abs,
 	pow = Math.pow,
+	ceil = Math.ceil,
 
 	hasOwn = lazyBind(Object.prototype.hasOwnProperty),
 	isPrototypeOf = lazyBind(Object.prototype.isPrototypeOf),
