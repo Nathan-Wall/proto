@@ -1,0 +1,531 @@
+import { describe, it, assert } from '@env';
+
+// A higher number will do more extensive tests, but will make tests run slower.
+const PRECISION_BOUND = 7,
+	PRECISION_DEC_STEP_MAX = 2,
+	PRECISION_DEC_STEP_INC = 1 / 7;
+
+describe('Range Operators', fn :{
+
+	describe('Exclusive Range Operator (..)', fn :{
+
+		it('creates an iterable', fn :{
+			var r = 1 .. 10;
+			assert.isObject(r);
+			assert.isNotArray(r);
+			assert(@iterator in r, 'has @iterator property');
+			assert.isFunction(r.@iterator);
+			assert('next' in r.@iterator(), '@iterator property can be iterated');
+			assert.isFunction(r.@iterator().next);
+		});
+
+		it('iterates in the positive direction excluding the upper bound', fn :{
+			var j = 3;
+			for i of 3 .. 14:
+				assert.strictEqual(i, j++);
+			assert.strictEqual(j, 14);
+		});
+
+		it('iterates in the negative direction excluding the lower bound', fn :{
+			var j = 23;
+			for i of 23 .. 8:
+				assert.strictEqual(i, j--);
+			assert.strictEqual(j, 8);
+		});
+
+		it('works with non-integer bounds', fn :{
+			var j = 1.5;
+			for i of 1.5 .. 82.7:
+				assert.strictEqual(i, j++);
+			assert.strictEqual(j, 83.5);
+		});
+
+		it('works with `-inf` left operand', fn :{
+			var r = (-inf .. 0).@iterator(), n;
+			for i of 0 .. 1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, -inf);
+			}
+		});
+
+		it('works with `inf` left operand', fn :{
+			var r = (inf .. 0).@iterator(), n;
+			for i of 0 .. 1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, inf);
+			}
+		});
+
+		it('works with `-inf` right operand', fn :{
+			var r = (0 .. -inf).@iterator(), n;
+			for i of 0 .. -1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, i);
+			}
+		});
+
+		it('works with `inf` right operand', fn :{
+			var r = (0 .. inf).@iterator(), n;
+			for i of 0 .. 1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, i);
+			}
+		});
+
+		it('works from -inf to inf', fn :{
+			var r = (-inf .. inf).@iterator(), n;
+			for i of 0 .. 1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, -inf);
+			}
+		});
+
+		it('works from inf to -inf', fn :{
+			var r = (inf .. -inf).@iterator(), n;
+			for i of 0 .. 1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, inf);
+			}
+		});
+
+		it('produces no values from -inf to -inf', fn :{
+			var r = (-inf .. -inf).@iterator(), n;
+			n = r.next();
+			assert.strictEqual(n.done, true);
+			assert.strictEqual(n.value, nil);
+		});
+
+		it('produces no values from inf to inf', fn :{
+			var r = (inf .. inf).@iterator(), n;
+			n = r.next();
+			assert.strictEqual(n.done, true);
+			assert.strictEqual(n.value, nil);
+		});
+
+		it('refuses NaN as an operand', fn :{
+			assert.throws(fn :{
+				var r = NaN .. 0;
+			});
+			assert.throws(fn :{
+				var r = 0 .. NaN;
+			});
+			assert.throws(fn :{
+				var r = NaN .. NaN;
+			});
+		});
+
+	});
+
+	describe('Inclusive Range Operator (...)', fn :{
+
+		it('creates an iteratable', fn :{
+			var r = 1 ... 10;
+			assert.isObject(r);
+			assert.isNotArray(r);
+			assert(@iterator in r, 'has @iterator property');
+			assert.isFunction(r.@iterator);
+			assert('next' in r.@iterator(), '@iterator property can be iterated');
+			assert.isFunction(r.@iterator().next);
+		});
+
+		it('iterates in the positive direction including the upper bound', fn :{
+			var j = 3;
+			for i of 3 ... 14:
+				assert.strictEqual(i, j++);
+			assert.strictEqual(j, 15);
+		});
+
+		it('iterates in the negative direction including the lower bound', fn :{
+			var j = 23;
+			for i of 23 ... 8:
+				assert.strictEqual(i, j--);
+			assert.strictEqual(j, 7);
+		});
+
+		it('works with non-integer bounds', fn :{
+
+			var j = 1.5;
+			for i of 1.5 ... 82.7:
+				assert.strictEqual(i, j++);
+			assert.strictEqual(j, 83.5);
+
+			j = -3.2;
+			for i of -3.2 ... -50.2:
+				assert.strictEqual(i, j--);
+			assert.strictEqual(j, -51.2);
+
+		});
+
+		it('works with `-inf` left operand', fn :{
+			var r = (-inf ... 0).@iterator(), n;
+			for i of 0 ... 1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, -inf);
+			}
+		});
+
+		it('works with `inf` left operand', fn :{
+			var r = (inf ... 0).@iterator(), n;
+			for i of 0 ... 1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, inf);
+			}
+		});
+
+		it('works with `-inf` right operand', fn :{
+			var r = (0 ... -inf).@iterator(), n;
+			for i of 0 ... -1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, i);
+			}
+		});
+
+		it('works with `inf` right operand', fn :{
+			var r = (0 ... inf).@iterator(), n;
+			for i of 0 ... 1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, i);
+			}
+		});
+
+		it('works from -inf to inf', fn :{
+			var r = (-inf ... inf).@iterator(), n;
+			for i of 0 ... 1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, -inf);
+			}
+		});
+
+		it('works from inf to -inf', fn :{
+			var r = (inf ... -inf).@iterator(), n;
+			for i of 0 ... 1000 :{
+				n = r.next();
+				assert.strictEqual(n.done, false);
+				assert.strictEqual(n.value, inf);
+			}
+		});
+
+		it('produces one value (-inf) from -inf to -inf', fn :{
+			var r = (-inf ... -inf).@iterator(), n;
+			n = r.next();
+			assert.strictEqual(n.done, false);
+			assert.strictEqual(n.value, -inf);
+			n = r.next();
+			assert.strictEqual(n.done, true);
+			assert.strictEqual(n.value, nil);
+		});
+
+		it('produces one value (inf) from inf to inf', fn :{
+			var r = (inf ... inf).@iterator(), n;
+			n = r.next();
+			assert.strictEqual(n.done, false);
+			assert.strictEqual(n.value, inf);
+			n = r.next();
+			assert.strictEqual(n.done, true);
+			assert.strictEqual(n.value, nil);
+		});
+
+		it('refuses NaN as an operand', fn :{
+			assert.throws(fn :{
+				var r = NaN ... 0;
+			});
+			assert.throws(fn :{
+				var r = 0 ... NaN;
+			});
+			assert.throws(fn :{
+				var r = NaN ... NaN;
+			});
+		});
+
+	});
+
+	describe('Range Step Modification Operator (by)', fn :{
+
+		it('changes the step of an exclusive range (positive int)', fn :{
+			var lbound = 0;
+			while lbound < PRECISION_BOUND :{
+				var ubound = lbound + 1;
+				while ubound < PRECISION_BOUND :{
+					var step = 1;
+					while step < PRECISION_BOUND + 2 :{
+						var j = lbound, diff;
+						for i of lbound .. ubound by step :{
+							assert.strictEqual(i, j);
+							j += step;
+						}
+						diff = (ubound - lbound) / step;
+						assert.strictEqual(j, lbound + Math.ceil(diff) * step);
+						step++;	
+					}
+					ubound++;
+				}
+				lbound++;
+			}
+		});
+
+		it('changes the step of an exclusive range (positive dec)', fn :{
+			var delta = 0.000001,
+				lbound = 0;
+			while lbound < PRECISION_BOUND :{
+				var ubound = lbound + 1;
+				while ubound < PRECISION_BOUND :{
+					var step, stepCount = 0;
+					while step < PRECISION_DEC_STEP_MAX :{
+						var j = lbound, diff, end;
+						step = 1 + stepCount++ * PRECISION_DEC_STEP_INC;
+						for i of lbound .. ubound by step :{
+							assert.closeTo(i, j, delta);
+							j += step;
+						}
+						diff = (ubound - lbound) / step;
+						end = lbound + Math.ceil(diff) * step;
+						assert.closeTo(j, end, delta);
+					}
+					ubound++;
+				}
+				lbound++;
+			}
+		});
+
+		it('changes the step of an inclusive range (positive int)', fn :{
+			var lbound = 0;
+			while lbound < PRECISION_BOUND :{
+				var ubound = lbound + 1;
+				while ubound < PRECISION_BOUND :{
+					var step = 1;
+					while step < PRECISION_BOUND + 2 :{
+						var j = lbound, diff, end;
+						for i of lbound ... ubound by step :{
+							assert.strictEqual(i, j);
+							j += step;
+						}
+						diff = (ubound - lbound) / step;
+						end = lbound + Math.ceil(diff) * step;
+						if end <= ubound:
+							end += step;
+						assert.strictEqual(j, end);
+						step++;	
+					}
+					ubound++;
+				}
+				lbound++;
+			}
+		});
+
+		it('changes the step of an inclusive range (positive dec)', fn :{
+			var delta = 0.000001,
+				lbound = 0;
+			while lbound < PRECISION_BOUND :{
+				var ubound = lbound + 1;
+				while ubound < PRECISION_BOUND :{
+					var step = 1;
+					while step < PRECISION_DEC_STEP_MAX :{
+						var j, count = 0;
+						for i of lbound ... ubound by step :{
+							j = lbound + count++ * step;
+							if j > ubound:
+								throw new Error(
+									'Out of range ['
+									& lbound & ', ' & ubound
+									& ']: ' & j
+								);
+							assert.closeTo(i, j, delta);
+						}
+						step += PRECISION_DEC_STEP_INC;
+					}
+					ubound++;
+				}
+				lbound++;
+			}
+		});
+
+		it('changes the step of an exclusive range (negative int)', fn :{
+			var lbound = 0;
+			while lbound < PRECISION_BOUND :{
+				var ubound = lbound + 1;
+				while ubound < PRECISION_BOUND :{
+					var step = 1;
+					while step < PRECISION_BOUND + 2 :{
+						var j = ubound, diff, end;
+						for i of ubound .. lbound by -step :{
+							assert.strictEqual(i, j);
+							j -= step;
+						}
+						diff = (lbound - ubound) / step;
+						end = ubound + Math.ceil(diff) * step;
+						if end > lbound:
+							end -= step;
+						assert.strictEqual(j, end);
+						step++;	
+					}
+					ubound++;
+				}
+				lbound++;
+			}
+		});
+
+		it('changes the step of an exclusive range (negative dec)', fn :{
+			var delta = 0.000001,
+				lbound = 0;
+			while lbound < PRECISION_BOUND :{
+				var ubound = lbound + 1;
+				while ubound < PRECISION_BOUND :{
+					var step = 1;
+					while step < PRECISION_DEC_STEP_MAX :{
+						var j = ubound, count = 0;
+						for i of ubound .. lbound by -step :{
+							j = ubound + count++ * -step;
+							if j <= lbound:
+								throw new Error(
+									'Out of range ('
+									& lbound & ', ' & ubound
+									& ']: ' & j
+								);
+							assert.closeTo(i, j, delta);
+						}
+						step += PRECISION_DEC_STEP_INC;
+					}
+					ubound++;
+				}
+				lbound++;
+			}
+		});
+
+		it('changes the step of an inclusive range (negative int)', fn :{
+			var lbound = 0;
+			while lbound < PRECISION_BOUND :{
+				var ubound = lbound + 1;
+				while ubound < PRECISION_BOUND :{
+					var step = 1;
+					while step < PRECISION_BOUND + 2 :{
+						var j = ubound, diff, end;
+						for i of ubound ... lbound by -step :{
+							assert.strictEqual(i, j);
+							j -= step;
+						}
+						diff = (lbound - ubound) / -step;
+						end = ubound + Math.ceil(diff) * -step;
+						if end >= lbound:
+							end -= step;
+						assert.strictEqual(j, end);
+						step++;	
+					}
+					ubound++;
+				}
+				lbound++;
+			}
+		});
+
+		it('changes the step of an inclusive range (negative dec)', fn :{
+			var delta = 0.000001,
+				lbound = 0;
+			while lbound < PRECISION_BOUND :{
+				var ubound = lbound + 1;
+				while ubound < PRECISION_BOUND :{
+					var step = 1;
+					while step < PRECISION_DEC_STEP_MAX :{
+						var j, count = 0;
+						for i of ubound ... lbound by -step :{
+							j = ubound + count++ * -step;
+							if j < lbound:
+								throw new Error(
+									'Out of range ['
+									& lbound & ', ' & ubound
+									& ']: ' & j
+								);
+							assert.closeTo(i, j, delta);
+						}
+						step += PRECISION_DEC_STEP_INC;
+					}
+					ubound++;
+				}
+				lbound++;
+			}
+		});
+
+		it('changes step to 0 correctly', fn :{
+			var r = (5 .. 10 by 0).@iterator();
+			var n;
+			n = r.next();
+			assert.strictEqual(n.value, 5);
+			assert.strictEqual(n.done, false);
+			n = r.next();
+			assert.strictEqual(n.value, 5);
+			assert.strictEqual(n.done, false);
+			n = r.next();
+			assert.strictEqual(n.value, 5);
+			assert.strictEqual(n.done, false);
+			n = r.next();
+			assert.strictEqual(n.value, 5);
+			assert.strictEqual(n.done, false);
+			n = r.next();
+			assert.strictEqual(n.value, 5);
+			assert.strictEqual(n.done, false);
+			n = r.next();
+			assert.strictEqual(n.value, 5);
+			assert.strictEqual(n.done, false);
+		});
+
+		it('refuses NaN as a right operand', fn :{
+			assert.throws(fn :{
+				var r = (0 .. 10 by NaN).@iterator();
+			});
+		});
+
+		it('refuses any left operand other than a range', fn :{
+			assert.throws(fn :{
+				var r = 0 by 2;
+			});
+			assert.throws(fn :{
+				var r = 1 by 2;
+			});
+			assert.throws(fn :{
+				var r = NaN by 2;
+			});
+			assert.throws(fn :{
+				var r = inf by 2;
+			});
+			assert.throws(fn :{
+				var r = 'foo' by 2;
+			});
+			assert.throws(fn :{
+				var r = { } by 2;
+			});
+			assert.throws(fn :{
+				var r = [ 'a', 'b', 'c' ] by 2;
+			});
+			assert.throws(fn :{
+				var r = true by 2;
+			});
+			assert.throws(fn :{
+				gen g :{
+					yield 1;
+					yield 2;
+					yield 3;
+				}
+				var r = g by 2;
+			});
+			assert.throws(fn :{
+				gen g :{
+					yield 1;
+					yield 2;
+					yield 3;
+				}
+				var r = g() by 2;
+			});
+		});
+
+	});
+
+});

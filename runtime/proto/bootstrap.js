@@ -194,7 +194,7 @@ function UnwrapProto(value) {
 	if (value.Primitive)
 		return undefined;
 	if ('Function' in value)
-		return value.Function;
+		return UnproxyProtoFunction(value.Function);
 	V = value.Value;
 	res = create(UnwrapProto(getPrototypeOf(value)));
 	ks = getOwnPropertyNames(V);

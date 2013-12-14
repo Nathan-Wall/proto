@@ -1,34 +1,41 @@
 {
-  "name": "protolang",
-  "version": "0.0.3",
-  "description": "A programming language that compiles to JavaScript and emphasizes prototypes, integrity, and syntax.",
+  "name": "Proto",
+  "version": "0.1.0",
+  "description": "A programming language that emphasizes prototypal programming, high integrity, and fluent, disambiguated syntax.",
   "main": "lib/proto.js",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "dependencies": {
+    "chai": "~1.8.1",
+    "commander": "~2.0.0",
+    "ejs": "~0.8.4",
+    "escodegen": "~0.0.27",
+    "esprima": "~1.0.4"
+  },
+  "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/Nathan-Wall/proto.git"
   },
-  "author": "Nathan Wall",
-  "license": "CC0",
-  "readmeFilename": "README.md",
-  "dependencies": {
-    "ejs": "~0.8.4",
-    "escodegen": "~0.0.27",
-    "esprima": "~1.0.4",
-    "commander": "~2.0.0"
-  },
-  "devDependencies": {},
   "keywords": [
+    "programming",
     "language",
     "prototypes",
     "prototypal",
     "inheritance",
     "syntax",
-    "ES6",
-    "transpile",
-    "transpiler",
-    "compile"
-  ]
+    "promises",
+    "async",
+    "await",
+    "generators",
+    "integrity"
+  ],
+  "author": "Nathan Wall",
+  "license": "public domain",
+  "readmeFilename": "README.md"
 }
