@@ -14,7 +14,7 @@ Variables which aren't assigned values take the value [`nil`](nil.md).
 
 	var foo;
 
-	console.log(foo);
+	console.log(foo); // [nil]
 
 Unlike JavaScript, variables are block scoped, not function scoped.
 
@@ -31,7 +31,7 @@ Unlike JavaScript, variables are block scoped, not function scoped.
 	// Proto
 	for i of 1 .. items.length :{
 		var item = items[i];
-		setTimeout(fn {
+		setTimeout(fn :{
 			console.log(item);
 		}, i * 1000);
 	}

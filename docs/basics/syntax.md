@@ -22,7 +22,7 @@ Proto removes some of JavaScript's requirements for parentheses.  Compare the fo
 		baz();
 	}
 
-	// JavaScript
+	// JavaScript (ES6)
 	for (var key of keys) {
 		bar(key);
 	}
@@ -67,10 +67,10 @@ Parentheses are also relaxed when creating a function.  If a function doesn't ha
 	}
 
 	var obj = {
-		baz(c) :{
+		baz: fn(c) :{
 			// This method has one parameter.
 		},
-		bing :{
+		bing: fn :{
 			// This method doesn't have any parameters.
 		}
 	};
