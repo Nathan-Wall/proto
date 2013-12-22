@@ -9,6 +9,7 @@ var FunctionProto = CreatePrototype({
 			args = slice(arguments, 1);
 		// TODO: 
 		//return (...r) -> this(...[ ...r[0..index], ...args, r[index..inf] ]);
+		// TODO: set arity?
 	},
 
 	prepend: function prepend() {
@@ -19,6 +20,7 @@ var FunctionProto = CreatePrototype({
 		return CreateFunction(undefined, function() {
 			return Call(f, this, concat(preArgs, slice(arguments)));
 		});
+		// TODO: set arity?
 	},
 
 	append: function append() {
@@ -28,7 +30,8 @@ var FunctionProto = CreatePrototype({
 			preArgs = slice(arguments);
 		return CreateFunction(undefined, function() {
 			return Call(f, this, concat(slice(arguments), preArgs));
-		});		
+		});
+		// TODO: set arity?
 	}
 
 });
@@ -112,7 +115,7 @@ function Bind(obj, receiver) {
 	 	bound = lazyBind(f);
 	else
 		bound = lazyBind(f, receiver);
-	return CreateFunction(FunctionProto, bound, f.length + 1);
+	return CreateFunction(FunctionProto, bound, obj.name, obj.arity + 1);
 }
 
 function AsCoercive(f, nilable) {
@@ -123,7 +126,7 @@ function AsCoercive(f, nilable) {
 			if (value === null || value === undefined)
 				return undefined;
 			return Call(f, undefined, [ value ]);
-		}, 1);
+		}, f.name, 1);
 	return f;
 }
 
@@ -200,7 +203,7 @@ function PartiallyApply(f, appliedArgs) {
 			}
 		}
 		Call(f, this, slice(args));
-	}, appliedArgs.length);
+	}, undefined, appliedArgs.length);
 }
 
 function PartiallyApplyRest(unusedIndices, args) {

@@ -64,14 +64,12 @@ Default values for function parameters can be specified.  Parameters take their 
 
 ### Rest Parameters
 
-Rest parameters 
-
 Rest parameters can be used to take any remaining arguments that are passed into a function past the number of parameters specified for the function.  The `...` prefix is used to speficy a rest parameter.  Rest parameters are arrays.
 
 	fn foo(first, ...args) :{
 		console.log('first', first);
-		for arg of args:
-			console.log(i, arg);
+		for i of args.length:
+			console.log(i, args[i]);
 	}
 
 	foo('a', 'b', 'c', 'd');

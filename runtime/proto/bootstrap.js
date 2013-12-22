@@ -214,13 +214,13 @@ function UnwrapProto(value) {
 
 // TODO: Copy properties from the __ProtoFunction__?
 function UnproxyProtoFunction(F) {
-	return function() {
+	return createWrapper(F, function() {
 		var args = create(null);
-		args.length = 0;
+		args.length = arguments.length;
 		for (var i = 0; i < arguments.length; i++)
 			args[i] = proxyJs(arguments[i]);
 		apply(F, proxyJs(this), args);
-	};
+	});
 }
 
 function __convertFunctions__(obj) {

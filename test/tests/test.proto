@@ -1,2 +1,3 @@
 import 'function.proto';
+import 'async.proto';
 import 'range.proto';

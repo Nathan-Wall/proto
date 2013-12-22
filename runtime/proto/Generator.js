@@ -19,7 +19,7 @@ var GenStateSuspendedStart = 'suspendedStart',
 	// breaking out of the dispatch switch statement.
 	GeneratorContinue = create(null);
 
-function CreateGeneratorFunction(proto, progeneratedFn, arity) {
+function CreateGeneratorFunction(proto, progeneratedFn, name, arity) {
 	// TODO: This needs some work... specifically the way the prototypes are set
 	// up... proto should probably refer to the function's prototype, not the
 	// generator object's prototype.  The way slice(arguments) is being used
@@ -30,7 +30,7 @@ function CreateGeneratorFunction(proto, progeneratedFn, arity) {
 	obj.GeneratorStart = progeneratedFn;
 	return CreateFunction(undefined, function() {
 		return GeneratorInit(Like(obj), CreateArray(null, arguments));
-	}, arity);
+	}, name, arity);
 }
 
 function GeneratorInit(generator, args) {

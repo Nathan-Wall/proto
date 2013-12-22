@@ -4,7 +4,7 @@
 
 There are 3 range operators: `..`, `...`, and `by`.
 
-### `..`
+### Inclusive Range Operator `..`
 
 The exclusive range operator `..` creates an iterator that iterates between the left operand and the right operand, including the left operand but excluding the right operand.
 
@@ -18,7 +18,19 @@ The exclusive range operator `..` creates an iterator that iterates between the 
 	// 3
 	// 4
 
-### `...`
+Any expression may be used as an operand.  Thus, iterating the indices of an array could be written:
+
+	var array = [ 'a', 'b', 'c', 'd' ];
+	for i of 0 .. array.length:
+		console.log(i);
+
+	// Logs:
+	// 0
+	// 1
+	// 2
+	// 3
+
+### Exclusive Range Operator `...`
 
 The inclusive range operator `...` creates an iterator that iterates between the left operand and the right operand, including both.
 
@@ -33,9 +45,9 @@ The inclusive range operator `...` creates an iterator that iterates between the
 	// 4
 	// 5
 
-### `by`
+### Range Step Operator `by`
 
-The range step modification operator `by` changes the amount that the value produced by the iterator increases by.
+The range step operator `by` changes the amount that the value produced by the iterator increases by.
 
 	for i of 0 .. 10 by 2:
 		console.log(i);
@@ -46,18 +58,6 @@ The range step modification operator `by` changes the amount that the value prod
 	// 4
 	// 6
 	// 8
-
-Any expression may be used as an operand.  Thus, iterating the indices of an array could be written:
-
-	var array = [ 'a', 'b', 'c', 'd' ];
-	for i of 0 .. array.length:
-		console.log(i);
-
-	// Logs:
-	// 0
-	// 1
-	// 2
-	// 3
 
 ### Iterating from a higher value to a lower one
 

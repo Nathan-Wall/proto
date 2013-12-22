@@ -1,0 +1,42 @@
+import { describe, it, assert } from '../lib/util.proto';
+
+describe('Async Functions', fn :{
+
+	it('resolves to the correct value', async :{
+
+		async foo :{
+			return 5;
+		}
+
+		async bar :{
+			return 'bam';
+		}
+
+		assert.strictEqual(await foo(), 5);
+		assert.strictEqual(await bar(), 'bam');
+
+	});
+
+	it('implies arity', async :{
+
+		async f1 :{ }
+		async f2() :{ }
+		async f3(a) :{ }
+		async f4(a, b) :{ }
+		async f5(a, b, c) :{ }
+		async f6(a, b, c, ...d) :{ }
+		async f7(a, b = 'foo') :{ }
+		async f8({ a, b }, c) :{ }
+
+		assert.strictEqual(f1.arity, 0);
+		assert.strictEqual(f2.arity, 0);
+		assert.strictEqual(f3.arity, 1);
+		assert.strictEqual(f4.arity, 2);
+		assert.strictEqual(f5.arity, 3);
+		assert.strictEqual(f6.arity, 3);
+		assert.strictEqual(f7.arity, 1);
+		assert.strictEqual(f8.arity, 2);
+
+	});
+
+});
