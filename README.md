@@ -33,3 +33,7 @@ This will output the compiled JavaScript to stdout.  You can pipe it elsewhere o
 	Server running on port 3000
 
 This simple server can be useful when developing Proto scripts so that you don't have to constantly compile them.  It will *only* serve `.proto` files and it will compile them to JavaScript on the fly.
+
+### Contributions
+
+If you would like to contribute, [see the code guide](https://github.com/Nathan-Wall/proto/blob/master/code-guide.md).
