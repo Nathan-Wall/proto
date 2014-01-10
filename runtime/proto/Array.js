@@ -2,6 +2,14 @@ var ArrayProto = CreatePrototype({
 
 	'@Iterator': function iterator() {
 		return ArrayValues(this);
+	},
+
+	push: function(/* ...values */) {
+		pushAll(this, arguments);
+	},
+
+	join: function(sep) {
+		return join(this, sep);
 	}
 
 });

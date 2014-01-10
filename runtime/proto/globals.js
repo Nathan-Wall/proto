@@ -1,4 +1,7 @@
-var global_Object = ObjectProto,
+var jsonStringify = JSON.stringify,
+	jsonParse = JSON.parse,
+
+	global_Object = ObjectProto,
 	global_Boolean = BooleanProto,
 	global_Number = NumberProto,
 	global_String = StringProto,
@@ -8,10 +11,15 @@ var global_Object = ObjectProto,
 	global_Symbol = SymbolProto,
 	global_Slot = SlotProto,
 	global_Generator = GeneratorProto,
-	global_Promise = PromiseProto,
+	global_Date = DateProto,
 	global_reflect = reflect,
 	global_inf = Infinity,
 	global_NaN = NaN,
+	global_Error = CreatePrototype({
+		init: function(message) {
+			SetOwn(this, 'message', message);
+		}
+	}),
 	global_console = console,
 
 	global_boolean = CreateFunction(undefined, function(value) {
@@ -46,12 +54,27 @@ var global_Object = ObjectProto,
 		return ToObject(value);
 	}),
 
-	global_setTimeout = CreateFunction(undefined, function(value) {
-		return SetTimeout(f, interval);
+	global_setTimeout = CreateFunction(undefined, function(callback, interval) {
+		return SetTimeout(callback, interval);
+	}),
+
+	global_setInterval = CreateFunction(undefined, function(callback, interval) {
+		return SetInterval(callback, interval);
 	}),
 
 	global_Math = CreatePrototype({
 		ceil: function(value) {
 			return ceil(value);
+		}
+	}),
+
+	global_JSON = CreatePrototype({
+		stringify: function(value, replacer, space) {
+			// TODO: Static properties
+			return jsonStringify(value.Value, replacer, space);
+		},
+		parse: function(value, reviver) {
+			// TODO: More direct algorithm? Get rid of using proxyJs here?
+			return proxyJs(jsonParse(value, reviver));
 		}
 	});

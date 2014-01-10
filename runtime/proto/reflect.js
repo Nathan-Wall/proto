@@ -100,7 +100,9 @@ function CreatePrototype(properties) {
 		else if (test(/^static_/, key)) {
 			if (staticProps === undefined)
 				staticProps = create(null);
-			staticProps[stringSlice(key, 7)] = properties[key];
+			staticProps[stringSlice(key, 7)] = CreateFunction(
+				undefined, properties[key]
+			);
 			delete properties[key];
 		}
 		else
@@ -605,7 +607,11 @@ function propsToDescriptors(props, base) {
 	for (var i = 0; i < keys.length; i++) {
 		key = keys[i];
 		d = own(getOwnPropertyDescriptor(props, key));
-		d.enumerable = false;
+		//d.enumerable = false;
+		// Switching enumerable to `true` seems to make interfacing with JS
+		// scripts easier... TODO: Remove any logic which is intended to work in
+		// a Proto env where enumerable is set to `false`... this has changed.
+		d.enumerable = true;
 		desc[key] = d;
 	}
 
@@ -674,16 +680,18 @@ function mixin(mixinWhat, mixinWith) {
 
 	for (var i = 0; i < keys.length; i++) {
 		key = keys[i];
-		whatDesc = own(getPropertyDescriptor(mixinWhat, name));
-		withDesc = own(getPropertyDescriptor(mixinWith, name));
-
+		whatDesc = getPropertyDescriptor(mixinWhat, key);
+		withDesc = getPropertyDescriptor(mixinWith, key);
 		if (!whatDesc || whatDesc.configurable)
 			// If mixinWhat does not already have the property, or if mixinWhat
 			// has the property and it's configurable, add it as is.
-			define(mixinWhat, name, withDesc);
-		else if (whatDesc.writable && 'value' in withDesc)
-			// If the property is writable and the withDesc has a value, write the value.
-			mixinWhat[name] = withDesc.value;
+			define(mixinWhat, key, withDesc);
+		else if (hasOwn(whatDesc, 'writable')
+		&& whatDesc.writable
+		&& hasOwn(withDesc, 'value'))
+			// If the property is writable and the withDesc has a value, write
+			// the value.
+			mixinWhat[key] = withDesc.value;
 	}
 
 	return mixinWhat;

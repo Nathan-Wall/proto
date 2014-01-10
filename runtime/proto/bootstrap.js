@@ -5,6 +5,8 @@ var Object = global.Object,
 	TypeError = global.TypeError,
 	RangeError = global.RangeError,
 	Infinity = global.Infinity,
+	setTimeout = global.setTimeout,
+	setInterval = global.setInterval,
 
 	lazyBind = Function.prototype.bind.bind(Function.prototype.call),
 	lazyTie = Function.prototype.bind.bind(Function.prototype.apply),
@@ -24,6 +26,7 @@ var Object = global.Object,
 	abs = Math.abs,
 	pow = Math.pow,
 	ceil = Math.ceil,
+	DateNow = Date.now,
 
 	hasOwn = lazyBind(Object.prototype.hasOwnProperty),
 	isPrototypeOf = lazyBind(Object.prototype.isPrototypeOf),
@@ -45,6 +48,8 @@ var Object = global.Object,
 	_splice = Array.prototype.splice,
 	charAt = lazyBind(String.prototype.charAt),
 	stringSlice = lazyBind(String.prototype.slice),
+	toLowerCase = lazyBind(String.prototype.toLowerCase),
+	toUpperCase = lazyBind(String.prototype.toUpperCase),
 	test = lazyBind(RegExp.prototype.test),
 
 	MAX_PRECISION = pow(2, 53),
@@ -58,7 +63,6 @@ var Object = global.Object,
 		return o;
 	})(),
 	NumberProto = CreateObject(ObjectProto),
-	DateProto = CreateObject(ObjectProto),
 
 	I = function I(value) { return value; },
 	NOOP = function() { };
@@ -245,7 +249,13 @@ function SetTimeout(f, interval) {
 }
 
 function SetInterval(f, interval) {
-	// TODO
+	if (!IsCallable(f))
+		throw new TypeError('Function expected');
+	interval = ToNumber(interval) >>> 0;
+	// TODO: Cancel mechanism
+	// TODO: Override existing setTimeout (and/or clearTimeout?) to
+	// guarantee integrity.
+	setInterval(f.Function, interval);
 }
 
 function NilCoalesce(left, right) {

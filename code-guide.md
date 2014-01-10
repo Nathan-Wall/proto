@@ -19,15 +19,15 @@ This Proto compiler compiles to **ECMAScript 5.1**.  This is the target language
 
 This project uses title case (`FooBar`) for some specific purposes.
 
-1. **compiler code**: Functions used to process Proto nodes by type and translate them into JavaScript nodes.  Each function is named after the specific node type being processed (`ArrayExpression`, `FunctionExpression`, `IfStatement`, etc).
-2. **runtime code**: Variables that hold Proto wrappers and functions that act on them.  For example, the `define` function acts on JavaScript native objects, while the `Define` function acts on Proto wrapper objects.
-3. **built-ins**: Objects which are intended to act as prototypes.  For example: `Array`, `Promise`, etc.
++ **compiler code**: Functions used to process Proto nodes by type and translate them into JavaScript nodes.  Each function is named after the specific node type being processed (`ArrayExpression`, `FunctionExpression`, `IfStatement`, etc).
++ **runtime code**: Variables that hold Proto wrappers and functions that act on them.  For example, the `define` function acts on JavaScript native objects, while the `Define` function acts on Proto wrapper objects.
++ **built-ins**: Objects which are intended to act as prototypes.  For example: `Array`, `Promise`, etc.
 
 Otherwise, this project tends to follow common JavaScript casing guidelines: camelCase for most things, ALL_CAPS for constants, TitleCase for constructors.
 
 ### Integrity
 
-Of primary importance, Proto code must be written with integrity.  We want to make sure that we avoid various types of leaks of internal information and ensure the system maintains its integrity.  A good introduction to writing high integrity JavaScript can be found here: [jQuery Conf HIJS Talk](http://www.youtube.com/watch?v=FrFUI591WhI).
+Of primary importance, runtime code must be written with integrity.  We want to make sure that we avoid various types of leaks of internal information and ensure the system maintains its integrity.  A good introduction to writing high integrity JavaScript can be found here: [jQuery Conf HIJS Talk](http://www.youtube.com/watch?v=FrFUI591WhI).
 
 Here are some basic guidelines:
 
@@ -97,3 +97,32 @@ Because future implementations may start following the specification here, we gu
 	// Correct
 	var dict = Object.create(null);
 	dict[foo] = 'bar';
+
+#### Manually coerce parameters
+
+Parameters should be manually coerced so that coercion only happens once.
+
+	function bad(bar) {
+		var x, y;
+		x = bar + 1;
+		y = bar + 2;
+		console.log(x, y);
+	}
+
+	function good(bar) {
+		var x, y;
+		bar = +bar; // coerce
+		x = bar + 1;
+		y = bar + 2;
+		console.log(x, y);
+	}
+
+	var bar = {
+		valueOf: function() {
+			return Math.random() * 100;
+		}
+	};
+	bad(bar);
+	// logs two very different values
+	good(bar);
+	// always logs values that differ by 1

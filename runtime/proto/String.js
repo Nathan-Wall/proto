@@ -21,10 +21,21 @@ var StringProto = CreatePrototype({
 			writable: false,
 			configurable: false
 		});
+		this.StringValue = value;
+	},
+
+	lower: function() {
+		return toLowerCase(ToString(this));
+	},
+
+	upper: function() {
+		return toUpperCase(ToString(this));
 	}
 
 });
 
+// TODO: Is this used?  Should it be used? I think there should instead be
+// a StringInit function.
 function CreateString(proto, value) {
 	var v = ToString(value);
 	if (proto === undefined)
@@ -41,6 +52,8 @@ function ToString(value) {
 			return String(Call(value.ToString, value, [ ]));
 		if ('StringValue' in value)
 			return String(value.StringValue);
+		if ('ProxyJs' in value)
+			return String(value.Value);
 		if (IsObject(value))
 			return '[Object]';
 		return '[???]';
