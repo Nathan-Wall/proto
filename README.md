@@ -10,7 +10,7 @@ To learn about the Proto language, please [see the documentation](https://github
 
 ## Use
 
-	npm install protolang
+	npm install protolang -g
 
 In a JS project:
 
