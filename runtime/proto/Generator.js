@@ -29,11 +29,11 @@ function CreateGeneratorFunction(proto, progeneratedFn, name, arity) {
 	var obj = CreateObject(proto);
 	obj.GeneratorStart = progeneratedFn;
 	return CreateFunction(undefined, function() {
-		return GeneratorInit(Like(obj), CreateArray(null, arguments));
+		return GeneratorInit(Like(obj), CreateArray(null, arguments), this);
 	}, name, arity);
 }
 
-function GeneratorInit(generator, args) {
+function GeneratorInit(generator, args, receiver) {
 
 	if (!IsObject(generator))
 		throw new TypeError('Object expected');
@@ -44,8 +44,8 @@ function GeneratorInit(generator, args) {
 		throw new TypeError('Object expected');
 
 	generator.InnerFn = bind(
-		apply(generator.GeneratorStart, this, args.Value),
-		this
+		apply(generator.GeneratorStart, receiver, args.Value),
+		receiver
 	);
 	generator.GeneratorContext = new GeneratorContext();
 	generator.GeneratorState = GenStateSuspendedStart;
@@ -155,7 +155,7 @@ var GeneratorProto = CreatePrototype({
 
 	init: function init() {
 		// TODO: Each generator's init should probably adjust it's arity
-		GeneratorInit(this, slice(arguments));
+		GeneratorInit(this, slice(arguments), this);
 	},
 
 	next: function next(value) {
