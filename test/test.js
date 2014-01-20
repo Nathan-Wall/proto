@@ -11,7 +11,7 @@ var fs = require('fs'),
 global.assert = chai.assert;
 
 (0, eval)(proto.compile(
-	fs.readFileSync(path.join(testsdir, 'test.proto')),
+	fs.readFileSync(path.join(testsdir, 'test.pr')),
 	testsdir,
 	true
 ));

@@ -55,6 +55,8 @@ var Object = global.Object,
 	MAX_PRECISION = pow(2, 53),
 	MAX_UINT = pow(2, 32) - 1,
 
+	DYNAMIC_THIS = create(null),
+
 	// This is being done instead of `CreateObject(null)` to avoid a cycle which
 	// is very difficult to deal with in the builder.
 	ObjectProto = (function() {

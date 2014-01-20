@@ -23,7 +23,7 @@ There is also a `tools/` directory with a command-line compiler (`protoc`) and a
 
 ### Command-Line Compiler
 
-	$ node protoc /path/to/file.proto
+	$ node protoc /path/to/file.pr
 
 This will output the compiled JavaScript to stdout.  You can pipe it elsewhere or redirect it to a file using your OS pipes and redirects.
 

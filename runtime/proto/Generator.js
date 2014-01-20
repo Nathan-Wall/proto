@@ -19,18 +19,22 @@ var GenStateSuspendedStart = 'suspendedStart',
 	// breaking out of the dispatch switch statement.
 	GeneratorContinue = create(null);
 
-function CreateGeneratorFunction(proto, progeneratedFn, name, arity) {
+function CreateGeneratorFunction(proto, progeneratedFn, name, arity, receiver) {
 	// TODO: This needs some work... specifically the way the prototypes are set
 	// up... proto should probably refer to the function's prototype, not the
 	// generator object's prototype.  The way slice(arguments) is being used
 	// and the CreateFunction could probably use some work too.
 	if (proto === undefined)
 		proto = GeneratorProto;
+	if (arguments.length < 5)
+		receiver = DYNAMIC_THIS;
 	var obj = CreateObject(proto);
 	obj.GeneratorStart = progeneratedFn;
 	return CreateFunction(undefined, function() {
-		return GeneratorInit(Like(obj), CreateArray(null, arguments), this);
-	}, name, arity);
+		var iter = Like(obj);
+		GeneratorInit(iter, CreateArray(null, arguments), this);
+		return iter;
+	}, name, arity, receiver);
 }
 
 function GeneratorInit(generator, args, receiver) {
@@ -49,8 +53,6 @@ function GeneratorInit(generator, args, receiver) {
 	);
 	generator.GeneratorContext = new GeneratorContext();
 	generator.GeneratorState = GenStateSuspendedStart;
-
-	return generator;
 
 }
 
@@ -230,7 +232,7 @@ var GeneratorContext = (function() {
 			var lastIndex = this.tryStack.length - 1,
 				entry = this.tryStack[lastIndex];
 			if (entry && entry.catchLoc === catchLoc)
-				this.tryStack.length = lastIndex;
+				splice(this.tryStack, lastIndex);
 		},
 
 		popFinally: function(finallyLoc) {
@@ -253,8 +255,7 @@ var GeneratorContext = (function() {
 
 			// Dispatch the exception to the "end" location by default.
 			this.thrown = exception;
-			this.next = "end";
-
+			this.next = 'end';
 			for (var i = this.tryStack.length - 1; i >= 0; --i) {
 				var entry = this.tryStack[i];
 				if (entry.catchLoc) {

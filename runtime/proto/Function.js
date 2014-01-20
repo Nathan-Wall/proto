@@ -36,15 +36,17 @@ var FunctionProto = CreatePrototype({
 
 });
 
-function CreateFunction(proto, jsfn, name, arity) {
+function CreateFunction(proto, jsfn, name, arity, receiver) {
 	if (proto === undefined)
 		proto = FunctionProto;
 	var obj = CreateObject(proto);
-	FunctionInit(obj, jsfn, name, arity);
+	if (arguments.length < 5)
+		receiver = DYNAMIC_THIS;
+	FunctionInit(obj, jsfn, name, arity, receiver);
 	return obj;
 }
 
-function FunctionInit(obj, jsfn, name, arity) {
+function FunctionInit(obj, jsfn, name, arity, receiver) {
 	if (typeof jsfn != 'function')
 		throw new TypeError('Function expected');
 	if (arity === undefined)
@@ -52,6 +54,7 @@ function FunctionInit(obj, jsfn, name, arity) {
 	else
 		arity = ToUint32(arity);
 	obj.Function = jsfn;
+	obj.Receiver = receiver;
 	define(obj.Value, 'name', {
 		value: name,
 		writable: false,
@@ -76,6 +79,8 @@ function IsCallable(value) {
 // args should always be a native JS array (or undefined)
 function Call(f, receiver, args) {
 	var F = GetFunction(f);
+	if (f.Receiver !== DYNAMIC_THIS)
+		receiver = f.Receiver;
 	if (args !== undefined) {
 		if (!isArray(args))
 			throw new TypeError('Native JS Array expected');
@@ -111,11 +116,13 @@ function CallOwnMethod(obj, key, args) {
 function Bind(obj, receiver) {
 	var f = GetFunction(obj),
 		bound;
+	if (obj.Receiver !== DYNAMIC_THIS)
+		receiver = obj.Receiver;
 	if (arguments.length == 1)
 	 	bound = lazyBind(f);
-	else
-		bound = lazyBind(f, receiver);
-	return CreateFunction(FunctionProto, bound, obj.name, obj.arity + 1);
+	return CreateFunction(
+		FunctionProto, bound, obj.name, obj.arity + 1, receiver
+	);
 }
 
 function AsCoercive(f, nilable) {
@@ -202,7 +209,7 @@ function PartiallyApply(f, appliedArgs) {
 				i += insert.length - 1;
 			}
 		}
-		Call(f, this, slice(args));
+		return Call(f, this, slice(args));
 	}, undefined, appliedArgs.length);
 }
 

@@ -95,7 +95,7 @@ Because future implementations may start following the specification here, we gu
 	dict[foo] = 'bar';
 
 	// Correct
-	var dict = Object.create(null);
+	var dict = create(null); // where create = Object.create
 	dict[foo] = 'bar';
 
 #### Manually coerce parameters

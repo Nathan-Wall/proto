@@ -1,0 +1,34 @@
+import { describe, it, assert } from '../lib/util.pr';
+import { runGenericTests } from 'function-generic.pr';
+
+async resolver(f) :{
+	return this::f();
+}
+
+describe('Functions', fn :{
+
+	runGenericTests({
+
+		create: fn(lexicalThis | boolean, arity) :{
+			var f;
+			if lexicalThis :{
+				if arity == nil:
+					f = fn foo(a, b) ::{ return this; };
+				else
+					f = fn foo(a, b) of arity ::{ return this; };
+			}
+			else :{
+				if arity == nil:
+					f = fn foo(a, b) :{ return this; };
+				else
+					f = fn foo(a, b) of arity :{ return this; };
+			}
+			return {
+				function: f,
+				resolve: resolver:(f)
+			};
+		}
+
+	});
+
+});

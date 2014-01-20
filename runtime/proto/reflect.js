@@ -36,7 +36,7 @@ var reflect = CreatePrototype({
 		// Note: It makes sense for Proto to examine inherited properties in
 		// the descriptors, although it doesn't for JS, because it's trivial to
 		// create dictionaries in Proto.
-		// TODO
+		return Define(obj, key, desc);
 	}
 
 });
@@ -664,7 +664,7 @@ function New(obj, args) {
 	return newObj;
 }
 
-function mixin(mixinWhat, mixinWith) {
+function mixin(mixinWhat, mixinWith, withHandler) {
 
 	if (Object(mixinWhat) != mixinWhat)
 		throw new TypeError('Object expected');
@@ -682,6 +682,8 @@ function mixin(mixinWhat, mixinWith) {
 		key = keys[i];
 		whatDesc = getPropertyDescriptor(mixinWhat, key);
 		withDesc = getPropertyDescriptor(mixinWith, key);
+		if (withHandler !== undefined && hasOwn(withDesc, 'value'))
+			withDesc.value = withHandler(withDesc.value);
 		if (!whatDesc || whatDesc.configurable)
 			// If mixinWhat does not already have the property, or if mixinWhat
 			// has the property and it's configurable, add it as is.
@@ -698,6 +700,9 @@ function mixin(mixinWhat, mixinWith) {
 
 }
 
+// TODO: It'd probably be best to just rewrite this using Proto operations
+// rather than using `mixin` and remove the weird `withHandler` stuff from
+// `mixin`.
 function Mixin(to, from) {
 	if (!IsObject(to))
 		throw new TypeError('Object expected');
@@ -706,7 +711,13 @@ function Mixin(to, from) {
 		return to;
 	if (!IsObject(from))
 		throw new TypeError('Object expected');
-	mixin(to.Value, from.Value);
+	// TODO: Deal with JS proxied objects.
+	var toProxy = 'ProxyJs' in to,
+		fromProxy = 'ProxyJs' in from,
+		handler;
+	if (toProxy != fromProxy)
+		handler = toProxy ? UnwrapProto : proxyJs;
+	mixin(to.Value, from.Value, handler);
 	if (hasOwn(from, 'Static')) {
 		if (!hasOwn(to, 'Static'))
 			to.Static = create(null);

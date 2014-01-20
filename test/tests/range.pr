@@ -1,4 +1,4 @@
-import { describe, it, assert } from '@env';
+import { describe, it, assert } from '../lib/util.pr';
 
 // A higher number will do more extensive tests, but will make tests run slower.
 const PRECISION_BOUND = 7,
@@ -22,30 +22,30 @@ describe('Range Operators', fn :{
 		it('iterates in the positive direction excluding the upper bound', fn :{
 			var j = 3;
 			for i of 3 .. 14:
-				assert.strictEqual(i, j++);
-			assert.strictEqual(j, 14);
+				assert.equal(i, j++);
+			assert.equal(j, 14);
 		});
 
 		it('iterates in the negative direction excluding the lower bound', fn :{
 			var j = 23;
 			for i of 23 .. 8:
-				assert.strictEqual(i, j--);
-			assert.strictEqual(j, 8);
+				assert.equal(i, j--);
+			assert.equal(j, 8);
 		});
 
 		it('works with non-integer bounds', fn :{
 			var j = 1.5;
 			for i of 1.5 .. 82.7:
-				assert.strictEqual(i, j++);
-			assert.strictEqual(j, 83.5);
+				assert.equal(i, j++);
+			assert.equal(j, 83.5);
 		});
 
 		it('works with `-inf` left operand', fn :{
 			var r = (-inf .. 0).@iterator(), n;
 			for i of 0 .. 1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, -inf);
+				assert.equal(n.done, false);
+				assert.equal(n.value, -inf);
 			}
 		});
 
@@ -53,8 +53,8 @@ describe('Range Operators', fn :{
 			var r = (inf .. 0).@iterator(), n;
 			for i of 0 .. 1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, inf);
+				assert.equal(n.done, false);
+				assert.equal(n.value, inf);
 			}
 		});
 
@@ -62,8 +62,8 @@ describe('Range Operators', fn :{
 			var r = (0 .. -inf).@iterator(), n;
 			for i of 0 .. -1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, i);
+				assert.equal(n.done, false);
+				assert.equal(n.value, i);
 			}
 		});
 
@@ -71,8 +71,8 @@ describe('Range Operators', fn :{
 			var r = (0 .. inf).@iterator(), n;
 			for i of 0 .. 1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, i);
+				assert.equal(n.done, false);
+				assert.equal(n.value, i);
 			}
 		});
 
@@ -80,8 +80,8 @@ describe('Range Operators', fn :{
 			var r = (-inf .. inf).@iterator(), n;
 			for i of 0 .. 1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, -inf);
+				assert.equal(n.done, false);
+				assert.equal(n.value, -inf);
 			}
 		});
 
@@ -89,23 +89,23 @@ describe('Range Operators', fn :{
 			var r = (inf .. -inf).@iterator(), n;
 			for i of 0 .. 1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, inf);
+				assert.equal(n.done, false);
+				assert.equal(n.value, inf);
 			}
 		});
 
 		it('produces no values from -inf to -inf', fn :{
 			var r = (-inf .. -inf).@iterator(), n;
 			n = r.next();
-			assert.strictEqual(n.done, true);
-			assert.strictEqual(n.value, nil);
+			assert.equal(n.done, true);
+			assert.equal(n.value, nil);
 		});
 
 		it('produces no values from inf to inf', fn :{
 			var r = (inf .. inf).@iterator(), n;
 			n = r.next();
-			assert.strictEqual(n.done, true);
-			assert.strictEqual(n.value, nil);
+			assert.equal(n.done, true);
+			assert.equal(n.value, nil);
 		});
 
 		it('refuses NaN as an operand', fn :{
@@ -137,28 +137,28 @@ describe('Range Operators', fn :{
 		it('iterates in the positive direction including the upper bound', fn :{
 			var j = 3;
 			for i of 3 ... 14:
-				assert.strictEqual(i, j++);
-			assert.strictEqual(j, 15);
+				assert.equal(i, j++);
+			assert.equal(j, 15);
 		});
 
 		it('iterates in the negative direction including the lower bound', fn :{
 			var j = 23;
 			for i of 23 ... 8:
-				assert.strictEqual(i, j--);
-			assert.strictEqual(j, 7);
+				assert.equal(i, j--);
+			assert.equal(j, 7);
 		});
 
 		it('works with non-integer bounds', fn :{
 
 			var j = 1.5;
 			for i of 1.5 ... 82.7:
-				assert.strictEqual(i, j++);
-			assert.strictEqual(j, 83.5);
+				assert.equal(i, j++);
+			assert.equal(j, 83.5);
 
 			j = -3.2;
 			for i of -3.2 ... -50.2:
-				assert.strictEqual(i, j--);
-			assert.strictEqual(j, -51.2);
+				assert.equal(i, j--);
+			assert.equal(j, -51.2);
 
 		});
 
@@ -166,8 +166,8 @@ describe('Range Operators', fn :{
 			var r = (-inf ... 0).@iterator(), n;
 			for i of 0 ... 1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, -inf);
+				assert.equal(n.done, false);
+				assert.equal(n.value, -inf);
 			}
 		});
 
@@ -175,8 +175,8 @@ describe('Range Operators', fn :{
 			var r = (inf ... 0).@iterator(), n;
 			for i of 0 ... 1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, inf);
+				assert.equal(n.done, false);
+				assert.equal(n.value, inf);
 			}
 		});
 
@@ -184,8 +184,8 @@ describe('Range Operators', fn :{
 			var r = (0 ... -inf).@iterator(), n;
 			for i of 0 ... -1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, i);
+				assert.equal(n.done, false);
+				assert.equal(n.value, i);
 			}
 		});
 
@@ -193,8 +193,8 @@ describe('Range Operators', fn :{
 			var r = (0 ... inf).@iterator(), n;
 			for i of 0 ... 1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, i);
+				assert.equal(n.done, false);
+				assert.equal(n.value, i);
 			}
 		});
 
@@ -202,8 +202,8 @@ describe('Range Operators', fn :{
 			var r = (-inf ... inf).@iterator(), n;
 			for i of 0 ... 1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, -inf);
+				assert.equal(n.done, false);
+				assert.equal(n.value, -inf);
 			}
 		});
 
@@ -211,29 +211,29 @@ describe('Range Operators', fn :{
 			var r = (inf ... -inf).@iterator(), n;
 			for i of 0 ... 1000 :{
 				n = r.next();
-				assert.strictEqual(n.done, false);
-				assert.strictEqual(n.value, inf);
+				assert.equal(n.done, false);
+				assert.equal(n.value, inf);
 			}
 		});
 
 		it('produces one value (-inf) from -inf to -inf', fn :{
 			var r = (-inf ... -inf).@iterator(), n;
 			n = r.next();
-			assert.strictEqual(n.done, false);
-			assert.strictEqual(n.value, -inf);
+			assert.equal(n.done, false);
+			assert.equal(n.value, -inf);
 			n = r.next();
-			assert.strictEqual(n.done, true);
-			assert.strictEqual(n.value, nil);
+			assert.equal(n.done, true);
+			assert.equal(n.value, nil);
 		});
 
 		it('produces one value (inf) from inf to inf', fn :{
 			var r = (inf ... inf).@iterator(), n;
 			n = r.next();
-			assert.strictEqual(n.done, false);
-			assert.strictEqual(n.value, inf);
+			assert.equal(n.done, false);
+			assert.equal(n.value, inf);
 			n = r.next();
-			assert.strictEqual(n.done, true);
-			assert.strictEqual(n.value, nil);
+			assert.equal(n.done, true);
+			assert.equal(n.value, nil);
 		});
 
 		it('refuses NaN as an operand', fn :{
@@ -261,11 +261,11 @@ describe('Range Operators', fn :{
 					while step < PRECISION_BOUND + 2 :{
 						var j = lbound, diff;
 						for i of lbound .. ubound by step :{
-							assert.strictEqual(i, j);
+							assert.equal(i, j);
 							j += step;
 						}
 						diff = (ubound - lbound) / step;
-						assert.strictEqual(j, lbound + Math.ceil(diff) * step);
+						assert.equal(j, lbound + Math.ceil(diff) * step);
 						step++;	
 					}
 					ubound++;
@@ -307,14 +307,14 @@ describe('Range Operators', fn :{
 					while step < PRECISION_BOUND + 2 :{
 						var j = lbound, diff, end;
 						for i of lbound ... ubound by step :{
-							assert.strictEqual(i, j);
+							assert.equal(i, j);
 							j += step;
 						}
 						diff = (ubound - lbound) / step;
 						end = lbound + Math.ceil(diff) * step;
 						if end <= ubound:
 							end += step;
-						assert.strictEqual(j, end);
+						assert.equal(j, end);
 						step++;	
 					}
 					ubound++;
@@ -359,14 +359,14 @@ describe('Range Operators', fn :{
 					while step < PRECISION_BOUND + 2 :{
 						var j = ubound, diff, end;
 						for i of ubound .. lbound by -step :{
-							assert.strictEqual(i, j);
+							assert.equal(i, j);
 							j -= step;
 						}
 						diff = (lbound - ubound) / step;
 						end = ubound + Math.ceil(diff) * step;
 						if end > lbound:
 							end -= step;
-						assert.strictEqual(j, end);
+						assert.equal(j, end);
 						step++;	
 					}
 					ubound++;
@@ -411,14 +411,14 @@ describe('Range Operators', fn :{
 					while step < PRECISION_BOUND + 2 :{
 						var j = ubound, diff, end;
 						for i of ubound ... lbound by -step :{
-							assert.strictEqual(i, j);
+							assert.equal(i, j);
 							j -= step;
 						}
 						diff = (lbound - ubound) / -step;
 						end = ubound + Math.ceil(diff) * -step;
 						if end >= lbound:
 							end -= step;
-						assert.strictEqual(j, end);
+						assert.equal(j, end);
 						step++;	
 					}
 					ubound++;
@@ -458,23 +458,23 @@ describe('Range Operators', fn :{
 			var r = (5 .. 10 by 0).@iterator();
 			var n;
 			n = r.next();
-			assert.strictEqual(n.value, 5);
-			assert.strictEqual(n.done, false);
+			assert.equal(n.value, 5);
+			assert.equal(n.done, false);
 			n = r.next();
-			assert.strictEqual(n.value, 5);
-			assert.strictEqual(n.done, false);
+			assert.equal(n.value, 5);
+			assert.equal(n.done, false);
 			n = r.next();
-			assert.strictEqual(n.value, 5);
-			assert.strictEqual(n.done, false);
+			assert.equal(n.value, 5);
+			assert.equal(n.done, false);
 			n = r.next();
-			assert.strictEqual(n.value, 5);
-			assert.strictEqual(n.done, false);
+			assert.equal(n.value, 5);
+			assert.equal(n.done, false);
 			n = r.next();
-			assert.strictEqual(n.value, 5);
-			assert.strictEqual(n.done, false);
+			assert.equal(n.value, 5);
+			assert.equal(n.done, false);
 			n = r.next();
-			assert.strictEqual(n.value, 5);
-			assert.strictEqual(n.done, false);
+			assert.equal(n.value, 5);
+			assert.equal(n.done, false);
 		});
 
 		it('refuses NaN as a right operand', fn :{

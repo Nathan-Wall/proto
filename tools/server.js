@@ -26,7 +26,7 @@ http.createServer(function(req, res) {
 	var file = path.join(root, url.parse(req.url).pathname),
 		ext = path.extname(file);
 	switch (ext) {
-		case '.proto':
+		case '.pr':
 			fs.readFile(file, function(err, source) {
 				if (err)
 					return res.end('File read error');

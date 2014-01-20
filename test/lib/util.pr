@@ -1,0 +1,28 @@
+import { assert as _assert, it as _it } from '@env';
+
+fn it(desc, callback) :{
+	_it(desc, async(done) :{
+		try :{ await callback(); }
+		catch (x) :{
+			done(x);
+			return;
+		}
+		done();
+	});
+}
+
+fn assert(t, m) :{
+	return _assert(t, m);
+}
+
+assert = assert := _assert;
+delete assert.strictEqual;
+
+assert.equal = fn(a, b, m) :{
+	return assert(a == b,
+		m ?? 'Expected ' & JSON.stringify(a) & ' to equal ' & JSON.stringify(b)
+	);
+};
+
+export { it, assert };
+export { describe } from '@env';

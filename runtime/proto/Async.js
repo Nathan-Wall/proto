@@ -1,6 +1,8 @@
-function CreateAsyncFunction(proto, progeneratedFn, name, arity) {
+function CreateAsyncFunction(proto, progeneratedFn, name, arity, receiver) {
 	if (arity === undefined)
 		arity = progeneratedFn.length;
+	if (arguments.length < 5)
+		receiver = DYNAMIC_THIS;
 	var genF = CreateGeneratorFunction(null, progeneratedFn);
 	return CreateFunction(proto, createWrapper(progeneratedFn, function() {
 		var gen = Call(genF, this, slice(arguments)),
@@ -11,34 +13,53 @@ function CreateAsyncFunction(proto, progeneratedFn, name, arity) {
 				gen.AsyncReject = reject;
 			})
 		);
-		AsyncNext(gen);
+		QueueMicrotask(function() {
+			AsyncNext(gen);
+		});
 		return promise;
-	}), name, arity);
+	}), name, arity, receiver);
 }
 
 function AsyncNext(gen, send) {
-	var info, value, done;
-	try { info = GeneratorNext(gen, send); }
+	try {
+		AsyncHandleResult(gen, GeneratorNext(gen, send));
+	}
 	catch (x) {
 		Call(gen.AsyncReject, undefined, [ x ]);
 		return;
 	}
-	value = info.Value.value;
-	done = info.Value.done;
+}
+
+function AsyncThrow(gen, exception) {
+	try {
+		AsyncHandleResult(gen, GeneratorThrow(gen, exception));
+	}
+	catch (x) {
+		Call(gen.AsyncReject, undefined, [ x ]);
+		return;
+	}
+}
+
+function AsyncHandleResult(gen, result) {
+	var value = result.Value.value,
+		done = result.Value.done;
 	if (done) {
 		Call(gen.AsyncResolve, undefined, [ value ]);
 		return;
 	}
-	if (!IsPromise(value))
-		throw new TypeError('Promise expected');
-	// TODO: Does this always create a useless return promise? If so, it could
-	// be optimized to prevent this.
-	PromiseThen(value,
-		CreateFunction(undefined, function(v) {
-			AsyncNext(gen, v);
-		}),
-		CreateFunction(undefined, function(x) {
-			GeneratorThrow(gen, x);
-		})
-	);
+	if (IsPromise(value))
+		// TODO: Does this always create a useless return promise? If so, it could
+		// be optimized to prevent this.
+		PromiseThen(value,
+			CreateFunction(undefined, function(v) {
+				AsyncNext(gen, v);
+			}),
+			CreateFunction(undefined, function(x) {
+				AsyncThrow(gen, x);
+			})
+		);
+	else
+		QueueMicrotask(function() {
+			AsyncNext(gen, value);
+		});
 }

@@ -71,7 +71,11 @@ var jsonStringify = JSON.stringify,
 	global_JSON = CreatePrototype({
 		stringify: function(value, replacer, space) {
 			// TODO: Static properties
-			return jsonStringify(value.Value, replacer, space);
+			// TODO: Does this work with nested objects?
+			if (IsWrapper(value))
+				return jsonStringify(value.Value, replacer, space);
+			else
+				return jsonStringify(value);
 		},
 		parse: function(value, reviver) {
 			// TODO: More direct algorithm? Get rid of using proxyJs here?
