@@ -1,3 +1,21 @@
+var NumberProto = CreatePrototype({
+
+	init: function(value) {
+		if (!IsObject(this))
+			throw new TypeError('Object expected');
+		if (value === undefined)
+			value = '';
+		else
+			value = ToNumber(value);
+		this.NumberValue = value;
+	},
+
+	toString: function(radix) {
+		return numberToString(ToNumber(this), radix);
+	}
+
+});
+
 function CreateNumber(proto, value) {
 	var v = ToNumber(value);
 	if (proto === undefined)

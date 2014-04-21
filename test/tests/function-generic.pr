@@ -42,15 +42,15 @@ fn testProps(f) :{
 
 }
 
-fn runGenericTests(adapter) :{
+fn runGenericTestSet(declaration, adapter) :{
 
-	describe('Declarations', fn :{
+	describe(declaration ? 'Declarations' : 'Expressions', fn :{
 
 		describe('Dynamic `this`', fn :{
 
-			it('declares functions with dynamic this', async :{
+			it('functions have dynamic this', async :{
 
-				var foo = adapter.create(false).resolve,
+				var foo = adapter.create(declrataion, false).resolve,
 					x = { foo };
 
 				assert.equal(await foo(), nil);
@@ -60,21 +60,20 @@ fn runGenericTests(adapter) :{
 
 			});
 
-			testProps(adapter.create(false));
+			testProps(adapter.create(declaration, false));
 			describe('#arity configured with `of`', fn :{
-				testProps(adapter.create(false, 2));
+				testProps(adapter.create(declaration, false, 2));
 			});
 
-			// TODO: test hoisting
 			// TODO: test block scope
 
 		});
 
 		describe('Lexical `this`', fn :{
 
-			it('declares functions with lexical this', async :{
+			it('functions have lexical this', async :{
 
-				var foo = this::adapter.create(true).resolve,
+				var foo = this::adapter.create(declaration, true).resolve,
 					x = { foo };
 
 				assert.equal(await foo(), this);
@@ -84,7 +83,9 @@ fn runGenericTests(adapter) :{
 
 				var y = {
 					getBar: fn :{
-						return this::adapter.create(true).resolve;
+						return this::adapter.create(
+								declaration, true
+							).resolve;
 					}
 				};
 				var bar = y.getBar();
@@ -98,15 +99,22 @@ fn runGenericTests(adapter) :{
 
 			});
 
-			testProps(adapter.create(true));
+			testProps(adapter.create(declaration, true));
 			describe('#arity configured with `of`', fn :{
-				testProps(adapter.create(true, 2));
+				testProps(adapter.create(declaration, true, 2));
 			});
 
 		});
 
 	});
 
+}
+
+fn runGenericTests(adapter) :{
+	describe('Generic Tests', fn :{
+		for declaration of [ true, false ]:
+			runGenericTestSet(declaration, adapter);
+	});
 }
 
 export { runGenericTests };

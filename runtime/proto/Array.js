@@ -1,15 +1,62 @@
+// TODO: This needs a lot of work.
+// TODO: Using `this.Value` in all of the functions below is overly simplified
+// because it doesn't account for static properties.
+// TODO: Account for wrapped arguments
 var ArrayProto = CreatePrototype({
 
 	'@Iterator': function iterator() {
 		return ArrayValues(this);
 	},
 
+	slice: function(from, to) {
+		var O = ToObject(this),
+			L = ToLength(Get(O, 'length')),
+			copy = create(null);
+		if (from === undefined)
+			from = 0;
+		if (to === undefined)
+			to = L;
+		from = ToLength(from);
+		to = ToLength(to);
+		if (to > L)
+			to = L;
+		copy.length = 0;
+		for (var i = from; i < to; i++)
+			push(copy, Get(O, i));
+		return CreateArray(undefined, copy);
+	},
+
 	push: function(/* ...values */) {
-		pushAll(this, arguments);
+		pushAll(this.Value, arguments);
+	},
+
+	unshift: function(/* ...values */) {
+		unshiftAll(this.Value, arguments);
 	},
 
 	join: function(sep) {
-		return join(this, sep);
+		return join(this.Value, sep);
+	},
+
+	map: function(transform) {
+		var O = ToObject(this),
+			L = ToLength(Get(O, 'length')),
+			mapped = create(null);
+		mapped.length = 0;
+		for (var i = 0; i < L; i++)
+			push(mapped, Call(transform, undefined, [ Get(O, i) ]));
+		return CreateArray(undefined, mapped);
+	},
+
+	// TODO: Make stable
+	sort: function(test) {
+		var O = ToObject(this),
+			T = test.Function;
+		if (O.ProxyJs)
+			T = function(a, b) {
+				return (0, test.Function)(proxyJs(a), proxyJs(b));
+			};
+		return CreateArray(undefined, sort(slice(O.Value), T));
 	}
 
 });
@@ -67,7 +114,7 @@ function CreateArray(proto, elements) {
 	if (elements !== undefined) {
 		if (Object(elements) !== elements)
 			throw new TypeError('Object expected');
-		L = elements.length >>> 0;
+		L = ToInteger(elements.length);
 		for (var i = 0; i < L; i++)
 			SetOwn(obj, i, elements[i]);
 		define(obj.Value, 'length', {

@@ -54,12 +54,8 @@ var jsonStringify = JSON.stringify,
 		return ToObject(value);
 	}),
 
-	global_setTimeout = CreateFunction(undefined, function(callback, interval) {
-		return SetTimeout(callback, interval);
-	}),
-
-	global_setInterval = CreateFunction(undefined, function(callback, interval) {
-		return SetInterval(callback, interval);
+	global_sleep = CreateFunction(undefined, function(interval) {
+		return Sleep(interval);
 	}),
 
 	global_Math = CreatePrototype({

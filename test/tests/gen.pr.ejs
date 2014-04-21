@@ -1,0 +1,20 @@
+import { describe, it, assert } from '../lib/util.pr';
+import { runGenericTests } from 'function-generic.pr';
+
+describe('Generator Functions', fn :{
+
+	async resolver(f) :{
+		var v;
+		for u of this::f():
+			v = u;
+		return v;
+	}
+
+	runGenericTests({
+		create: <%- partial('adapter-create.pr.pejs', {
+			fnType: 'gen',
+			retType: 'yield'
+		}) %>
+	});
+
+});

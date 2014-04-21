@@ -1,4 +1,4 @@
-import 'function.pr';
-import 'gen.pr';
-import 'async.pr';
+import 'function.pr.ejs';
+import 'gen.pr.ejs';
+import 'async.pr.ejs';
 import 'range.pr';

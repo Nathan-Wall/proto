@@ -9,27 +9,10 @@ describe('Async Functions', fn :{
 	}
 
 	runGenericTests({
-
-		create: fn(lexicalThis | boolean, arity) :{
-			var f;
-			if lexicalThis :{
-				if arity == nil:
-					f = async foo(a, b) ::{ return this; };
-				else
-					f = async foo(a, b) of arity ::{ return this; };
-			}
-			else :{
-				if arity == nil:
-					f = async foo(a, b) :{ return this; };
-				else
-					f = async foo(a, b) of arity :{ return this; };
-			}
-			return {
-				function: f,
-				resolve: resolver:(f)
-			};
-		}
-
+		create: <%- partial('adapter-create.pr.pejs', {
+			fnType: 'async',
+			retType: 'return'
+		}) %>
 	});
 
 	it('resolves to the correct value', async :{
@@ -99,11 +82,10 @@ describe('Async Functions', fn :{
 			assert.equal(x, 1);
 		}
 
-		var p = new Promise(fn(res) :{
-				setTimeout(fn :{
-					res();
-					timerEnded();
-				}, 20);
+		var p = new Promise(async(res) :{
+				await sleep(20);
+				res();
+				timerEnded();
 			});
 		
 		async bar :{

@@ -12,8 +12,4 @@ program
 
 file = path.resolve(process.cwd(), program.args.shift());
 
-(0, eval)(
-	'(function(require) {'
-		+ proto.compile(fs.readFileSync(file), path.dirname(file), true)
-	+ '})'
-)(require);
+proto.run(file);

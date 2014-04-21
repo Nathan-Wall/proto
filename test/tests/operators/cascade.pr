@@ -1,0 +1,160 @@
+import { describe, it, assert } from '../lib/util.pr';
+
+describe('Cascade Operator', fn :{
+
+	it('Cascades method calls', fn :{
+
+		var t = false, s = false;
+
+		var foo = {
+			x: fn: t = true,
+			y: fn: s = true,
+			q: 99
+		};
+
+		with foo :{
+			.x();
+			.y();
+		};
+
+		assert(t);
+		assert(s);
+
+	});
+
+	it('Cascades property set operation', fn :{
+
+		var t = false, s = false;
+
+		var foo = {
+			x: fn: t = true,
+			y: fn: s = true,
+			q: 99
+		};
+
+		with foo :{
+			.z = 3;
+			.q = 4;
+		};
+
+		assert.equal(foo.z, 3);
+		assert.equal(foo.q, 4);
+
+	});
+
+	it('Cascades mixed operations', fn :{
+
+		var t = false, s = false;
+
+		var foo = {
+			x: fn: t = true,
+			y: fn: s = true,
+			q: 99
+		};
+
+		with foo :{
+			.x();
+			.y();
+			.z = 3;
+		}
+
+		assert(t);
+		assert(s);
+		assert.equal(foo.z, 3);
+		assert.notProperty(foo, 'q');
+
+	});
+
+	describe('Returns the result of the last operation', fn :{
+
+		it('for method call', fn :{
+
+			var t = false, s = false;
+
+			var foo = {
+				x: fn: t = true,
+				y: fn :{ s = true; return 50; },
+				q: 99
+			};
+
+			var res = foo:{
+				.x();
+				.z = 3;
+				.y();
+			};
+
+			assert(t);
+			assert(s);
+			assert.equal(foo.z, 3);
+			assert.notProperty(foo, 'q');
+			assert.equal(res, 50);
+
+		});
+
+		it('for property set operation', fn :{
+
+			var t = false, s = false;
+
+			var foo = {
+				x: fn: t = true,
+				y: fn: s = true,
+				q: 99
+			};
+
+			var res = foo:{
+				.x();
+				.y();
+				.z = 3;
+			};
+
+			assert(t);
+			assert(s);
+			assert.equal(foo.z, 3);
+			assert.notProperty(foo, 'q');
+			assert.equal(res, 3);
+
+		});
+
+		it('for property get operation', fn :{
+
+			var t = false, s = false;
+
+			var foo = {
+				x: fn: t = true,
+				y: fn: s = true,
+				q: 99,
+				p: 20
+			};
+
+			var res = foo:{
+				.x();
+				.y();
+				.z = 3;
+				.p;
+			};
+
+			assert(t);
+			assert(s);
+			assert.equal(foo.z, 3);
+			assert.notProperty(foo, 'q');
+			assert.equal(res, 20);
+
+		});
+
+	});
+
+	it('handles labels', fn :{
+		var test = false,
+			bar = {
+				x: fn :{ test = true; },
+				y: fn :{ test = false; }
+			};
+		|foo| bar:{
+			.x();
+			break foo;
+			.y();
+		}
+		assert(test);
+	});
+
+});

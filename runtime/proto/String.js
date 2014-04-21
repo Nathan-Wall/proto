@@ -30,6 +30,29 @@ var StringProto = CreatePrototype({
 
 	upper: function() {
 		return toUpperCase(ToString(this));
+	},
+
+	substring: function(from, to) {
+		var S = ToString(this);
+		if (Is(from, -0))
+			from = S.length;
+		if (Is(to, -0))
+			to = S.length;
+		return stringSlice(S, from, to);
+	},
+
+	repeat: function(count) {
+		var S = ToString(this);
+		return join(new Array(+count + 1), S);
+	},
+
+	split: function(delim) {
+		var S = ToString(this);
+		return CreateArray(undefined, split(this, delim));
+	},
+
+	trim: function() {
+		return trim(ToString(this));
 	}
 
 });

@@ -15,7 +15,10 @@ Here are some examples comparing how things might be done in JavaScript vs how t
 		}, 100);
 	});
 	// Proto
-	var foo = async: setTimeout(fn: 5, 100);
+	var foo = (async :{
+		await sleep(100);
+		return 5;
+	})();
 
 	// JavaScript
 	var bar = Promise.resolve(5);
@@ -27,7 +30,7 @@ Here are some examples comparing how things might be done in JavaScript vs how t
 	var baz = Promise.reject(5);
 
 	// Proto
-	var baz = async :{ throw 5; }
+	var baz = async :{ throw 5; };
 
 	// JavaScript
 	var bing = Promise.all(array);

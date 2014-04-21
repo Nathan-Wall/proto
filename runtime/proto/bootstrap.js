@@ -1,6 +1,7 @@
 var Object = global.Object,
 	Number = global.Number,
 	String = global.String,
+	Array = global.Array,
 	Error = global.Error,
 	TypeError = global.TypeError,
 	RangeError = global.RangeError,
@@ -27,6 +28,7 @@ var Object = global.Object,
 	pow = Math.pow,
 	ceil = Math.ceil,
 	DateNow = Date.now,
+	DateParse = Date.parse,
 
 	hasOwn = lazyBind(Object.prototype.hasOwnProperty),
 	isPrototypeOf = lazyBind(Object.prototype.isPrototypeOf),
@@ -40,16 +42,22 @@ var Object = global.Object,
 	join = lazyBind(Array.prototype.join),
 	push = lazyBind(Array.prototype.push),
 	pushAll = lazyTie(Array.prototype.push),
+	unshiftAll = lazyTie(Array.prototype.unshift),
 	concat = lazyBind(Array.prototype.concat),
 	pop = lazyBind(Array.prototype.pop),
 	shift = lazyBind(Array.prototype.shift),
 	slice = lazyBind(Array.prototype.slice),
 	splice = lazyBind(Array.prototype.splice),
+	map = lazyBind(Array.prototype.map),
+	sort = lazyBind(Array.prototype.sort),
 	_splice = Array.prototype.splice,
 	charAt = lazyBind(String.prototype.charAt),
 	stringSlice = lazyBind(String.prototype.slice),
 	toLowerCase = lazyBind(String.prototype.toLowerCase),
 	toUpperCase = lazyBind(String.prototype.toUpperCase),
+	split = lazyBind(String.prototype.split),
+	trim = lazyBind(String.prototype.trim),
+	numberToString = lazyBind(Number.prototype.toString),
 	test = lazyBind(RegExp.prototype.test),
 
 	MAX_PRECISION = pow(2, 53),
@@ -64,7 +72,6 @@ var Object = global.Object,
 		o.Value = create(null);
 		return o;
 	})(),
-	NumberProto = CreateObject(ObjectProto),
 
 	I = function I(value) { return value; },
 	NOOP = function() { };
@@ -163,7 +170,7 @@ function proxyJs(value) {
 	// TODO: How will this work with inheritance?
 	p.ProxyJs = true;
 	p.Value = value;
-	if (typeof value == 'function')
+	if (typeof value == 'function') {
 		p.Function = function() {
 			var receiver = this,
 				args = create(null);
@@ -182,6 +189,8 @@ function proxyJs(value) {
 			}
 			return proxyJs(apply(value, receiver, args));
 		};
+		p.Receiver = DYNAMIC_THIS;
+	}
 	return p;
 }
 
@@ -240,24 +249,21 @@ function __convertFunctions__(obj) {
 	return ret;
 }
 
-function SetTimeout(f, interval) {
-	if (!IsCallable(f))
-		throw new TypeError('Function expected');
-	interval = ToNumber(interval) >>> 0;
-	// TODO: Cancel mechanism
-	// TODO: Override existing setTimeout (and/or clearTimeout?) to
+function Sleep(interval) {
+	interval = ToLength(interval);
+	// TODO: Override existing clearTimeout and clearInterval to
 	// guarantee integrity.
-	setTimeout(f.Function, interval);
-}
-
-function SetInterval(f, interval) {
-	if (!IsCallable(f))
-		throw new TypeError('Function expected');
-	interval = ToNumber(interval) >>> 0;
-	// TODO: Cancel mechanism
-	// TODO: Override existing setTimeout (and/or clearTimeout?) to
-	// guarantee integrity.
-	setInterval(f.Function, interval);
+	var promise = Like(PromiseProto),
+		Resolve, Reject;
+	PromiseInit(promise,
+		CreateFunction(undefined, function(resolve) {
+			Resolve = resolve;
+		})
+	);
+	setTimeout(function() {
+		Call(Resolve);
+	}, interval);
+	return promise;
 }
 
 function NilCoalesce(left, right) {
@@ -372,105 +378,3 @@ var createWrapper = (function() {
 function toWrapped() {
 	return Freeze(__convertFunctions__(this));
 }
-
-// return freeze({
-
-// 	Object: ObjectProto,
-// 	Boolean: BooleanProto,
-// 	Number: NumberProto,
-// 	String: StringProto,
-// 	Array: ArrayProto,
-// 	Function: FunctionProto,
-// 	Date: DateProto,
-// 	Range: RangeProto,
-// 	Symbol: SymbolProto,
-// 	Slot: SlotProto,
-// 	Generator: GeneratorProto,
-// 	Promise: PromiseProto,
-// 	reflect: reflect,
-
-// 	ToBoolean: ToBoolean,
-// 	ToNumber: ToNumber,
-// 	ToUint32: ToUint32,
-// 	ToString: ToString,
-// 	ToArray: ToArray,
-// 	ToObject: ToObject,
-// 	ToComparable: ToComparable,
-// 	ToType: ToType,
-
-// 	CreateObject: CreateObject,
-// 	CreateArray: CreateArray,
-// 	CreateFunction: CreateFunction,
-// 	CreateRange: CreateRange,
-// 	CreateSymbol: CreateSymbol,
-// 	CreateSymbolPrimitive: CreateSymbolPrimitive,
-// 	SymbolInit: SymbolInit,
-// 	CreateSlot: CreateSlot,
-// 	SlotInit: SlotInit,
-// 	CreateGeneratorFunction: CreateGeneratorFunction,
-// 	GeneratorInit: GeneratorInit,
-// 	GeneratorNext: GeneratorNext,
-// 	GeneratorThrow: GeneratorThrow,
-// 	PromiseInit: PromiseInit,
-// 	PromiseThen: PromiseThen,
-// 	CastToPromise: CastToPromise,
-// 	PromiseAll: PromiseAll,
-// 	CreateAsyncFunction: CreateAsyncFunction,
-
-// 	Is: Is,
-// 	Like: Like,
-// 	IsLike: IsLike,
-// 	New: New,
-// 	Mixin: Mixin,
-
-// 	bind: bind,
-// 	Bind: Bind,
-// 	arrayMerge: arrayMerge,
-// 	arraySlice: arraySlice,
-// 	CheckSpread: CheckSpread,
-// 	AsCoercive: AsCoercive,
-
-// 	GetPrototype: GetPrototype,
-// 	Own: Own,
-
-// 	Has: Has,
-// 	HasOwn: HasOwn,
-// 	Get: Get,
-// 	GetOwn: GetOwn,
-// 	Set: Set,
-// 	SetOwn: SetOwn,
-// 	Delete: Delete,
-// 	GetDescriptor: GetDescriptor,
-// 	GetOwnDescriptor: GetOwnDescriptor,
-// 	Call: Call,
-// 	CallMethod: CallMethod,
-// 	CallOwnMethod: CallOwnMethod,
-// 	PartiallyApply: PartiallyApply,
-
-// 	IsObject: IsObject,
-// 	IsCallable: IsCallable,
-// 	GetOwnKeys: GetOwnKeys,
-
-// 	Pow: Pow,
-
-// 	Slice: Slice,
-// 	SliceOwn: SliceOwn,
-
-// 	SetTimeout: SetTimeout,
-// 	SetInterval: SetInterval,
-
-// 	NilCoalesce: NilCoalesce,
-
-// 	proxyJs: proxyJs,
-
-// 	Infinity: Infinity,
-
-// 	'@toString': CreateSymbolPrimitive('@toString', 'ToString'),
-// 	'@get': CreateSymbolPrimitive('@get', 'Get'),
-// 	'@iterator': $iterator,
-// 	'@toComparable': $toComparable,
-// 	// ... TODO: Do others
-
-// 	toWrapped: 
-
-// });
