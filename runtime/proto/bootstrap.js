@@ -5,6 +5,7 @@ var Object = global.Object,
 	Error = global.Error,
 	TypeError = global.TypeError,
 	RangeError = global.RangeError,
+	ReferenceError = global.ReferenceError,
 	Infinity = global.Infinity,
 	setTimeout = global.setTimeout,
 	setInterval = global.setInterval,
@@ -150,7 +151,6 @@ function spliceAll(array, index, count, elements) {
 	return apply(_splice, array, arrayMerge([ index, count ], slice(elements)));
 }
 
-// TODO: This may not be being used...
 function own(obj) {
 	if (Object(obj) !== obj)
 		throw new TypeError('Object expected');

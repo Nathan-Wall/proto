@@ -14,40 +14,76 @@ describe('Functions', fn :{
 		}) %>
 	});
 
-	// describe('Declarations', fn :{
+	describe('Declarations', fn :{
 
-	// 	describe('Lexical `this`', fn :{
+		describe('Dynamic `this`', fn :{
 
-	// 		it('hoists', fn :{
+			it('hoists', fn :{
 
-	// 			assert.equal(foobar(4, 7), 11);
+				assert.equal(foobar(4, 7), 11);
 
-	// 			fn foobar(a, b) :{
-	// 				assert.equal(a, 4);
-	// 				assert.equal(b, 7);
-	// 				return a + b;
-	// 			}
+				fn foobar(a, b) :{
+					assert.equal(a, 4);
+					assert.equal(b, 7);
+					return a + b;
+				}
 
-	// 		});
+			});
 
-	// 	});
+			it('hoists when variable is defined in outer scope', fn :{
 
-	// 	describe('Dynamic `this`', fn :{
+				var foobar = 1;
 
-	// 		it('hoists', fn :{
+				:{
 
-	// 			assert.equal(foobar(4, 7), 11);
+					assert.equal(foobar(4, 7), 11);
 
-	// 			fn foobar(a, b) :{
-	// 				assert.equal(a, 4);
-	// 				assert.equal(b, 7);
-	// 				return a + b;
-	// 			}
+					fn foobar(a, b) :{
+						assert.equal(a, 4);
+						assert.equal(b, 7);
+						return a + b;
+					}
 
-	// 		});
+				}
 
-	// 	});
+			});
 
-	// });
+		});
+
+		describe('Lexical `this`', fn :{
+
+			it('hoists', fn ::{
+
+				assert.equal(foobar(4, 7), 11);
+
+				fn foobar(a, b) :{
+					assert.equal(a, 4);
+					assert.equal(b, 7);
+					return a + b;
+				}
+
+			});
+
+			it('hoists when variable is defined in outer scope', fn :{
+
+				var foobar = 1;
+
+				:{
+
+					assert.equal(foobar(4, 7), 11);
+
+					fn foobar(a, b) ::{
+						assert.equal(a, 4);
+						assert.equal(b, 7);
+						return a + b;
+					}
+
+				}
+
+			});
+
+		});
+
+	});
 
 });

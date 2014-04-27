@@ -1,80 +1,86 @@
 var jsonStringify = JSON.stringify,
 	jsonParse = JSON.parse,
 
-	global_Object = ObjectProto,
-	global_Boolean = BooleanProto,
-	global_Number = NumberProto,
-	global_String = StringProto,
-	global_Array = ArrayProto,
-	global_Function = FunctionProto,
-	global_Range = RangeProto,
-	global_Symbol = SymbolProto,
-	global_Slot = SlotProto,
-	global_Generator = GeneratorProto,
-	global_Date = DateProto,
-	global_reflect = reflect,
-	global_inf = Infinity,
-	global_NaN = NaN,
-	global_Error = CreatePrototype({
+	globals = own({
+		Object: ObjectProto,
+		Boolean: BooleanProto,
+		Number: NumberProto,
+		String: StringProto,
+		Array: ArrayProto,
+		Function: FunctionProto,
+		Range: RangeProto,
+		Symbol: SymbolProto,
+		Slot: SlotProto,
+		Generator: GeneratorProto,
+		Date: DateProto,
+		reflect: reflect,
+		inf: Infinity,
+		NaN: NaN,
+		Error: CreatePrototype({
 		init: function(message) {
-			SetOwn(this, 'message', message);
-		}
-	}),
-	global_console = console,
+				SetOwn(this, 'message', message);
+			}
+		}),
+		console: console,
 
-	global_boolean = CreateFunction(undefined, function(value) {
-		return ToBoolean(value);
-	}),
+		boolean: CreateFunction(undefined, function(value) {
+			return ToBoolean(value);
+		}),
 
-	global_number = CreateFunction(undefined, function(value) {
-		return ToNumber(value);
-	}),
+		number: CreateFunction(undefined, function(value) {
+			return ToNumber(value);
+		}),
 
-	global_int = CreateFunction(undefined, function(value) {
-		return ToInteger(value);
-	}),
+		int: CreateFunction(undefined, function(value) {
+			return ToInteger(value);
+		}),
 
-	// TODO: Rename `whole` and make upperbound larger than 2^32?
-	// TODO: Provide `natural` as well?
-	global_uint = CreateFunction(undefined, function(value) {
-		return ToUint32(value);
-	}),
+		// TODO: Rename `whole` and make upperbound larger than 2^32?
+		// TODO: Provide `natural` as well?
+		uint: CreateFunction(undefined, function(value) {
+			return ToUint32(value);
+		}),
 
-	global_string = CreateFunction(undefined, function(value) {
-		return ToString(value);
-	}),
+		string: CreateFunction(undefined, function(value) {
+			return ToString(value);
+		}),
 
-	global_function = CreateFunction(undefined, function(value) {
-		if (!IsCallable(value))
-			throw new TypeError('Function expected');
-		return value;
-	}),
+		function: CreateFunction(undefined, function(value) {
+			if (!IsCallable(value))
+				throw new TypeError('Function expected');
+			return value;
+		}),
 
-	global_object = CreateFunction(undefined, function(value) {
-		return ToObject(value);
-	}),
+		object: CreateFunction(undefined, function(value) {
+			return ToObject(value);
+		}),
 
-	global_sleep = CreateFunction(undefined, function(interval) {
-		return Sleep(interval);
-	}),
+		sleep: CreateFunction(undefined, function(interval) {
+			return Sleep(interval);
+		}),
 
-	global_Math = CreatePrototype({
-		ceil: function(value) {
-			return ceil(value);
-		}
-	}),
+		Math: CreatePrototype({
+			ceil: function(value) {
+				return ceil(value);
+			}
+		}),
 
-	global_JSON = CreatePrototype({
-		stringify: function(value, replacer, space) {
-			// TODO: Static properties
-			// TODO: Does this work with nested objects?
-			if (IsWrapper(value))
-				return jsonStringify(value.Value, replacer, space);
-			else
-				return jsonStringify(value);
-		},
-		parse: function(value, reviver) {
-			// TODO: More direct algorithm? Get rid of using proxyJs here?
-			return proxyJs(jsonParse(value, reviver));
-		}
+		JSON: CreatePrototype({
+			stringify: function(value, replacer, space) {
+				// TODO: Static properties
+				// TODO: Does this work with nested objects?
+				if (IsWrapper(value))
+					return jsonStringify(value.Value, replacer, space);
+				else
+					return jsonStringify(value);
+			},
+			parse: function(value, reviver) {
+				// TODO: More direct algorithm? Get rid of using proxyJs here?
+				return proxyJs(jsonParse(value, reviver));
+			}
+		})
 	});
+
+function GetBuiltInGlobal(name) {
+	return globals[name];
+}
