@@ -2,3 +2,4 @@ import 'function.pr.ejs';
 import 'gen.pr.ejs';
 import 'async.pr.ejs';
 import 'range.pr';
+import 'operators/operators.pr';

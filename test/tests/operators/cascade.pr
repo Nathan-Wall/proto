@@ -12,10 +12,10 @@ describe('Cascade Operator', fn :{
 			q: 99
 		};
 
-		with foo :{
+		foo :{{
 			.x();
 			.y();
-		};
+		}};
 
 		assert(t);
 		assert(s);
@@ -32,10 +32,10 @@ describe('Cascade Operator', fn :{
 			q: 99
 		};
 
-		with foo :{
+		foo :{{
 			.z = 3;
 			.q = 4;
-		};
+		}};
 
 		assert.equal(foo.z, 3);
 		assert.equal(foo.q, 4);
@@ -52,11 +52,11 @@ describe('Cascade Operator', fn :{
 			q: 99
 		};
 
-		with foo :{
+		foo :{{
 			.x();
 			.y();
 			.z = 3;
-		}
+		}};
 
 		assert(t);
 		assert(s);
@@ -77,11 +77,11 @@ describe('Cascade Operator', fn :{
 				q: 99
 			};
 
-			var res = foo:{
+			var res = foo :{{
 				.x();
 				.z = 3;
 				.y();
-			};
+			}};
 
 			assert(t);
 			assert(s);
@@ -101,11 +101,11 @@ describe('Cascade Operator', fn :{
 				q: 99
 			};
 
-			var res = foo:{
+			var res = foo :{{
 				.x();
 				.y();
 				.z = 3;
-			};
+			}};
 
 			assert(t);
 			assert(s);
@@ -126,12 +126,12 @@ describe('Cascade Operator', fn :{
 				p: 20
 			};
 
-			var res = foo:{
+			var res = foo :{{
 				.x();
 				.y();
 				.z = 3;
 				.p;
-			};
+			}};
 
 			assert(t);
 			assert(s);
@@ -149,11 +149,11 @@ describe('Cascade Operator', fn :{
 				x: fn :{ test = true; },
 				y: fn :{ test = false; }
 			};
-		|foo| bar:{
+		|foo| bar :{{
 			.x();
 			break foo;
 			.y();
-		}
+		}};
 		assert(test);
 	});
 
