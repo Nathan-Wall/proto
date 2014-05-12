@@ -1,0 +1,51 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('Block Expressions', fn :{
+
+	describe('Completion Values', fn :{
+
+			it('evaluates to the last in a series of expression statements',
+				fn :{
+					var x = :{
+							1;
+							2;
+							3;
+						};
+					assert.equal(x, 3);
+				}
+			);
+
+			it('evaluates to `try` block rather than `finally`', fn :{
+				var x = :{
+					1;
+					try :{
+						2;
+					}
+					finally :{
+						3;
+					}
+				};
+				assert.equal(x, 2);
+			});
+
+			it('evaluates to `catch` block when exception occurs', fn :{
+				var x = :{
+					1;
+					try :{
+						2;
+						throw new Error();
+						3;
+					}
+					catch y :{
+						4;
+					}
+					finally :{
+						5;
+					}
+				};
+				assert.equal(x, 4);
+			});
+
+	});
+
+});
