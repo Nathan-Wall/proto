@@ -14,6 +14,7 @@
 	+ [Async Functions](basics/async.md)
 		+ [Promises](basics/async/promises.md)
 	+ [Coercives](basics/coercives.md)
+	+ [Cascades](basics/cascades.md)
 + Operators:
 	+ [Arithmetic](operators/arithmetic.md)
 	+ [Comparison](operators/comparison.md)
