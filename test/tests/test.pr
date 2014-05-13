@@ -1,5 +1,7 @@
+import 'numbers.pr';
 import 'function.pr.ejs';
 import 'gen.pr.ejs';
 import 'async.pr.ejs';
 import 'range.pr';
 import 'syntax/syntax.pr';
+import 'operators/operators.pr';

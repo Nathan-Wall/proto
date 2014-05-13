@@ -2,6 +2,7 @@ var jsonStringify = JSON.stringify,
 	jsonParse = JSON.parse,
 
 	globals = own({
+
 		Object: ObjectProto,
 		Boolean: BooleanProto,
 		Number: NumberProto,
@@ -16,11 +17,13 @@ var jsonStringify = JSON.stringify,
 		reflect: reflect,
 		inf: Infinity,
 		NaN: NaN,
+
 		Error: CreatePrototype({
-		init: function(message) {
+			init: function(message) {
 				SetOwn(this, 'message', message);
 			}
 		}),
+		
 		console: console,
 
 		boolean: CreateFunction(undefined, function(value) {
