@@ -3,7 +3,8 @@ import { describe, it, assert } from '../lib/util.pr';
 // A higher number will do more extensive tests, but will make tests run slower.
 const PRECISION_BOUND = 7,
 	PRECISION_DEC_STEP_MAX = 2,
-	PRECISION_DEC_STEP_INC = 1 / 7;
+	PRECISION_DEC_STEP_INC = 1 / 7,
+	INFINITY_CHECK_LENGTH = 100;
 
 describe('Range Operators', fn :{
 
@@ -42,7 +43,7 @@ describe('Range Operators', fn :{
 
 		it('works with `-inf` left operand', fn :{
 			var r = (-inf .. 0).@iterator(), n;
-			for i of 0 .. 1000 :{
+			for i of 0 .. INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, -inf);
@@ -51,7 +52,7 @@ describe('Range Operators', fn :{
 
 		it('works with `inf` left operand', fn :{
 			var r = (inf .. 0).@iterator(), n;
-			for i of 0 .. 1000 :{
+			for i of 0 .. INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, inf);
@@ -60,7 +61,7 @@ describe('Range Operators', fn :{
 
 		it('works with `-inf` right operand', fn :{
 			var r = (0 .. -inf).@iterator(), n;
-			for i of 0 .. -1000 :{
+			for i of 0 .. -INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, i);
@@ -69,7 +70,7 @@ describe('Range Operators', fn :{
 
 		it('works with `inf` right operand', fn :{
 			var r = (0 .. inf).@iterator(), n;
-			for i of 0 .. 1000 :{
+			for i of 0 .. INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, i);
@@ -78,7 +79,7 @@ describe('Range Operators', fn :{
 
 		it('works from -inf to inf', fn :{
 			var r = (-inf .. inf).@iterator(), n;
-			for i of 0 .. 1000 :{
+			for i of 0 .. INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, -inf);
@@ -87,7 +88,7 @@ describe('Range Operators', fn :{
 
 		it('works from inf to -inf', fn :{
 			var r = (inf .. -inf).@iterator(), n;
-			for i of 0 .. 1000 :{
+			for i of 0 .. INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, inf);
@@ -164,7 +165,7 @@ describe('Range Operators', fn :{
 
 		it('works with `-inf` left operand', fn :{
 			var r = (-inf ... 0).@iterator(), n;
-			for i of 0 ... 1000 :{
+			for i of 0 ... INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, -inf);
@@ -173,7 +174,7 @@ describe('Range Operators', fn :{
 
 		it('works with `inf` left operand', fn :{
 			var r = (inf ... 0).@iterator(), n;
-			for i of 0 ... 1000 :{
+			for i of 0 ... INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, inf);
@@ -182,7 +183,7 @@ describe('Range Operators', fn :{
 
 		it('works with `-inf` right operand', fn :{
 			var r = (0 ... -inf).@iterator(), n;
-			for i of 0 ... -1000 :{
+			for i of 0 ... -INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, i);
@@ -191,7 +192,7 @@ describe('Range Operators', fn :{
 
 		it('works with `inf` right operand', fn :{
 			var r = (0 ... inf).@iterator(), n;
-			for i of 0 ... 1000 :{
+			for i of 0 ... INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, i);
@@ -200,7 +201,7 @@ describe('Range Operators', fn :{
 
 		it('works from -inf to inf', fn :{
 			var r = (-inf ... inf).@iterator(), n;
-			for i of 0 ... 1000 :{
+			for i of 0 ... INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, -inf);
@@ -209,7 +210,7 @@ describe('Range Operators', fn :{
 
 		it('works from inf to -inf', fn :{
 			var r = (inf ... -inf).@iterator(), n;
-			for i of 0 ... 1000 :{
+			for i of 0 ... INFINITY_CHECK_LENGTH :{
 				n = r.next();
 				assert.equal(n.done, false);
 				assert.equal(n.value, inf);
