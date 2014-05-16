@@ -67,7 +67,7 @@ function GeneratorInvoke(generator) {
 	generator.GeneratorState = generator.GeneratorContext.done
 		? GenStateCompleted
 		: GenStateSuspendedYield;
-	return CreateObject(null, {
+	return CreateSimpleObject({
 		value: value,
 		done: generator.GeneratorContext.done
 	});

@@ -16,7 +16,9 @@ describe('Range Operators', fn :{
 			assert.isNotArray(r);
 			assert(@iterator in r, 'has @iterator property');
 			assert.isFunction(r.@iterator);
-			assert('next' in r.@iterator(), '@iterator property can be iterated');
+			assert('next' in r.@iterator(),
+				'@iterator property can be iterated'
+			);
 			assert.isFunction(r.@iterator().next);
 		});
 
@@ -131,7 +133,9 @@ describe('Range Operators', fn :{
 			assert.isNotArray(r);
 			assert(@iterator in r, 'has @iterator property');
 			assert.isFunction(r.@iterator);
-			assert('next' in r.@iterator(), '@iterator property can be iterated');
+			assert('next' in r.@iterator(),
+				'@iterator property can be iterated'
+			);
 			assert.isFunction(r.@iterator().next);
 		});
 

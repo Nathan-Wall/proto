@@ -53,13 +53,13 @@ function CreateObject(proto, properties, staticProps, extendedProps) {
 	else
 		protoValue = proto.Value;
 	if (properties !== undefined) {
-		if (Object(properties) !== properties)
+		if (!isObject(properties))
 			throw new TypeError('Object expected');
 	}
 	wrapper = create(proto);
 	wrapper.Value = like(protoValue, properties);
 	if (staticProps !== undefined) {
-		if (Object(staticProps) !== staticProps)
+		if (!isObject(staticProps))
 			throw new TypeError('Object expected');
 		wrapper.Static = own(staticProps);
 	}
@@ -68,6 +68,24 @@ function CreateObject(proto, properties, staticProps, extendedProps) {
 			p = extendedProps[i];
 			Define(wrapper, p.kind, p.key, p.value, p.static, true, true);
 		}
+	}
+	return wrapper;
+}
+
+// TODO: It appears this may not actually offer performance improvements, so
+// maybe it should be removed.
+// The purpose of `CreateSimpleObject` is to offer a more performant function
+// than `CreateObject` for use cases where a prototypeless object is desired
+// with only data properties.  Note that accessor properties do not work with
+// `CreateSimpleObject` as it assumes `properties` is only a collection of
+// data properties (for performance).
+function CreateSimpleObject(properties) {
+	var wrapper = create(null),
+		props = keys(properties);
+	wrapper.Value = create(null);
+	for (var i = 0, prop; i < props.length; i++) {
+		prop = props[i];
+		wrapper[prop] = properties[prop];
 	}
 	return wrapper;
 }
@@ -117,9 +135,21 @@ function CreatePrototype(properties) {
 	return proto;
 }
 
+// This function aims to be equivalent to `Object(value) === value`. We use
+// other mechanisms for performance reasons, but in any case where the
+// implementation deviates from `Object(value) === value`, change to the
+// algorithm below should be considered to keep parity.  (Deviations may
+// occur due to additions to and changes in the underlying ECMAScript language.)
+function isObject(value) {
+	var t;
+	return value != null && ((t = typeof value) == 'object' || t == 'function');
+}
+
 function IsWrapper(value) {
-	if (Object(value) !== value)
+	if (!isObject(value))
 		return false;
+	// TODO: Should this instead just be an assertion (which could potentially
+	// be removed during a prod compilation -- for performance)?
 	if (!hasOwn(value, 'Value'))
 		throw new TypeError('Wrapper expected');
 	return true;	
@@ -639,7 +669,7 @@ function getUncommonPropertyNames(from, compareWith) {
 }
 
 function concatUncommonNames(from, compareWith) {
-	if (Object(from) != from
+	if (!isObject(from)
 		|| from === compareWith
 		|| isPrototypeOf(from, compareWith)) return [ ];
 	return concat(getOwnPropertyNames(from),
@@ -666,13 +696,13 @@ function New(obj, args) {
 
 function mixin(mixinWhat, mixinWith, withHandler) {
 
-	if (Object(mixinWhat) != mixinWhat)
+	if (!isObject(mixinWhat))
 		throw new TypeError('Object expected');
 
 	if (!isExtensible(mixinWhat))
 		throw new Error('Cannot mixin on non-exensible object');
 
-	if (Object(mixinWith) != mixinWith)
+	if (!isObject(mixinWith))
 		throw new TypeError('Object expected');
 
 	var keys = getUncommonPropertyNames(mixinWith, mixinWhat),
@@ -808,7 +838,7 @@ function createSafeDescriptor(obj) {
 
 function getPropertyDescriptor(obj, key) {
 	var desc, K;
-	if (Object(obj) !== obj)
+	if (!isObject(obj))
 		throw new TypeError('Object expected');
 	K = String(key);
 	do {
