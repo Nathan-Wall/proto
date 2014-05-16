@@ -266,13 +266,6 @@ function Sleep(interval) {
 	return promise;
 }
 
-function NilCoalesce(left, right) {
-	var test = Call(left, undefined, [ ]);
-	if (test === undefined || test === null)
-		return Call(right, undefined, [ ]);
-	return test;
-}
-
 // TODO: This currently isn't being used. Remove it?
 //
 // Creates a wrapper function with the same length as the original.
