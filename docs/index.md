@@ -9,12 +9,13 @@
 		+ [Symbols](basics/primitives/symbols.md)
 		+ [Object Wrappers](basics/primitives/object-wrappers.md)
 	+ [Objects](basics/objects.md)
-	+ [Functions](basics/functions.md)
-	+ [Generators](basics/generators.md)
-	+ [Async Functions](basics/async.md)
-		+ [Promises](basics/async/promises.md)
 	+ [Coercives](basics/coercives.md)
 	+ [Cascades](basics/cascades.md)
++ Functions:
+	+ [Functions](functions/functions.md)
+	+ [Generators](functions/generators.md)
+	+ [Async Functions](functions/async.md)
+		+ [Promises](functions/async/promises.md)
 + Operators:
 	+ [Arithmetic](operators/arithmetic.md)
 	+ [Comparison](operators/comparison.md)
@@ -25,6 +26,7 @@
 	+ [Partial Application `:(`](operators/partial-application.md)
 	+ [Spread `...`](operators/spread.md)
 	+ [Range `..`/`...`/`by`](operators/range.md)
+	+ [Nil-Coalescing `??`](operators/nil-coalescing.md)
 + Control Flow:
 	+ [if](control/if.md)
 	+ [for](control/for.md)
