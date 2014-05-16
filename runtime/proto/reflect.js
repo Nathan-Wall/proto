@@ -81,11 +81,11 @@ function CreateObject(proto, properties, staticProps, extendedProps) {
 // data properties (for performance).
 function CreateSimpleObject(properties) {
 	var wrapper = create(null),
+		valueObject = wrapper.Value = create(null),
 		props = keys(properties);
-	wrapper.Value = create(null);
 	for (var i = 0, prop; i < props.length; i++) {
 		prop = props[i];
-		wrapper[prop] = properties[prop];
+		valueObject[prop] = properties[prop];
 	}
 	return wrapper;
 }
