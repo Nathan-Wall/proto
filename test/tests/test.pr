@@ -1,4 +1,5 @@
 import 'numbers.pr';
+import 'objects/objects.pr';
 import 'function.pr.ejs';
 import 'gen.pr.ejs';
 import 'async.pr.ejs';

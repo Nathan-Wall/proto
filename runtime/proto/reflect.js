@@ -63,12 +63,12 @@ function CreateObject(proto, properties, staticProps, extendedProps) {
 			throw new TypeError('Object expected');
 		wrapper.Static = own(staticProps);
 	}
-	if (extendedProps !== undefined) {
+	if (extendedProps !== undefined)
 		for (var i = 0, p; i < extendedProps.length; i++) {
 			p = extendedProps[i];
-			Define(wrapper, p.kind, p.key, p.value, p.static, true, true);
+			if (!p.conditional || p.value != null)
+				Define(wrapper, p.kind, p.key, p.value, p.static, true, true);
 		}
-	}
 	return wrapper;
 }
 

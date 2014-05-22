@@ -24,5 +24,13 @@ assert.equal = fn(a, b, m) :{
 	);
 };
 
+assert.property = fn(a, b, m) :{
+	return assert(b in a, m ?? 'Expected property ' & b);
+};
+
+assert.notProperty = fn(a, b, m) :{
+	return assert(b !in a, m ?? 'Expected no property ' & b);
+};
+
 export { it, assert };
 export { describe } from '@env';

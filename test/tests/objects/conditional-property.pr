@@ -1,0 +1,205 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('Conditional Properties', fn :{
+
+	describe('Non-Static, Non-Prototypeless', fn :{
+
+		it('defines properties for which the value is non-nil', fn :{
+
+			var foo = {
+				a: 1,
+				b: 2,
+				?c: 3,
+				d: 4
+			};
+
+			assert.property(foo, 'c');
+			assert.equal(foo.c, 3);
+
+		});
+
+		it('doesn\'t define a property for which the value is nil', fn :{
+
+			var foo = {
+				a: 1,
+				b: 2,
+				?c: nil,
+				d: 4
+			};
+
+			assert.notProperty(foo, 'c');
+
+		});
+
+		it('defines properties for which the value is non-nil and falsey', fn :{
+
+			var foo = {
+				?a: 0,
+				?b: false,
+				?c: nil,
+				?d: 4,
+				?e: '',
+				?f: [ ],
+				?g: { }
+			};
+
+			for key of [ 'a', 'b', 'd', 'e', 'f', 'g' ]:
+				assert.property(foo, key);
+
+			assert.notProperty(foo, 'c');
+
+		});
+
+	});
+
+	describe('Non-Static, Prototypeless', fn :{
+
+		it('defines properties for which the value is non-nil', fn :{
+
+			var foo = #{
+				a: 1,
+				b: 2,
+				?c: 3,
+				d: 4
+			};
+
+			assert.property(foo, 'c');
+			assert.equal(foo.c, 3);
+
+		});
+
+		it('doesn\'t define a property for which the value is nil', fn :{
+
+			var foo = #{
+				a: 1,
+				b: 2,
+				?c: nil,
+				d: 4
+			};
+
+			assert.notProperty(foo, 'c');
+
+		});
+
+		it('defines properties for which the value is non-nil and falsey', fn :{
+
+			var foo = #{
+				?a: 0,
+				?b: false,
+				?c: nil,
+				?d: 4,
+				?e: '',
+				?f: [ ],
+				?g: { }
+			};
+
+			for key of [ 'a', 'b', 'd', 'e', 'f', 'g' ]:
+				assert.property(foo, key);
+
+			assert.notProperty(foo, 'c');
+
+		});
+
+	});
+
+	describe('Static, Non-Prototypeless', fn :{
+
+		it('defines properties for which the value is non-nil', fn :{
+
+			var foo = {
+				static a: 1,
+				static b: 2,
+				static ?c: 3,
+				static d: 4
+			};
+
+			assert.property(foo, 'c');
+			assert.equal(foo.c, 3);
+
+		});
+
+		it('doesn\'t define a property for which the value is nil', fn :{
+
+			var foo = {
+				static a: 1,
+				static b: 2,
+				static ?c: nil,
+				static d: 4
+			};
+
+			assert.notProperty(foo, 'c');
+
+		});
+
+		it('defines properties for which the value is non-nil and falsey', fn :{
+
+			var foo = {
+				static ?a: 0,
+				static ?b: false,
+				static ?c: nil,
+				static ?d: 4,
+				static ?e: '',
+				static ?f: [ ],
+				static ?g: { }
+			};
+
+			for key of [ 'a', 'b', 'd', 'e', 'f', 'g' ]:
+				assert.property(foo, key);
+
+			assert.notProperty(foo, 'c');
+
+		});
+
+	});
+
+	describe('Static, Prototypeless', fn :{
+
+		it('defines properties for which the value is non-nil', fn :{
+
+			var foo = {
+				static a: 1,
+				static b: 2,
+				static ?c: 3,
+				static d: 4
+			};
+
+			assert.property(foo, 'c');
+			assert.equal(foo.c, 3);
+
+		});
+
+		it('doesn\'t define a property for which the value is nil', fn :{
+
+			var foo = #{
+				static a: 1,
+				static b: 2,
+				static ?c: nil,
+				static d: 4
+			};
+
+			assert.notProperty(foo, 'c');
+
+		});
+
+		it('defines properties for which the value is non-nil and falsey', fn :{
+
+			var foo = #{
+				static ?a: 0,
+				static ?b: false,
+				static ?c: nil,
+				static ?d: 4,
+				static ?e: '',
+				static ?f: [ ],
+				static ?g: { }
+			};
+
+			for key of [ 'a', 'b', 'd', 'e', 'f', 'g' ]:
+				assert.property(foo, key);
+
+			assert.notProperty(foo, 'c');
+
+		});
+
+	});
+
+});

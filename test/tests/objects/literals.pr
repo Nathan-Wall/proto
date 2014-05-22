@@ -1,0 +1,27 @@
+import { describe, it, assert } from '../lib/util.pr';
+
+describe('Object Literals', fn :{
+
+	it('defines properties beginning with a letter', fn :{
+
+		var obj = {
+			a: 1
+		};
+
+		assert.property(obj, 'a');
+		assert.equal(obj.a, 1);
+
+	});
+
+	it('defines properties beginning with a number', fn :{
+
+		var obj = {
+			2: 'b'
+		};
+
+		assert.property(obj, '2');
+		assert.equal(obj['2'], 'b');
+
+	});
+
+});

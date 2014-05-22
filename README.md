@@ -8,6 +8,26 @@ Proto compiles to ECMAScript 5.  It uses ECMAScript 6 as a foundation, but devia
 
 To learn about the Proto language, please [see the documentation](https://github.com/Nathan-Wall/proto/blob/master/docs/index.md).
 
+## Feature List
+
+### ECMAScript 6
+
++ Destructuring
++ Rest Operator
++ Spread Operator
++ Parameter Defaults
++ Modules
++ [Generators](docs/functions/generators.md)
++ [Promises](docs/functions/async/promises.md)
+
+### ECMAScript 7 (expected)
+
++ [Async Functions](docs/functions/async.md)
+
+### Other
+
++ Coercives
+
 ## Use
 
 (Note: The npm version is currently sorely out of date. For the latest, you'll need to clone from github.)
