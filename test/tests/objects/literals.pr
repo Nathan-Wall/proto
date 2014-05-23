@@ -1,4 +1,4 @@
-import { describe, it, assert } from '../lib/util.pr';
+import { describe, it, assert } from '../../lib/util.pr';
 
 describe('Object Literals', fn :{
 

@@ -10,6 +10,8 @@ To learn about the Proto language, please [see the documentation](https://github
 
 ## Feature List
 
+Proto supports the following features.  Some of the features are expected to be in either ECMAScript 6 or 7, while others are unique to Proto.
+
 ### ECMAScript 6
 
 + Destructuring
@@ -19,6 +21,7 @@ To learn about the Proto language, please [see the documentation](https://github
 + Modules
 + [Generators](docs/functions/generators.md)
 + [Promises](docs/functions/async/promises.md)
++ `0b0101` and `0o12738` syntax for binary and octal numeric literals
 
 ### ECMAScript 7 (expected)
 
@@ -27,6 +30,9 @@ To learn about the Proto language, please [see the documentation](https://github
 ### Other
 
 + Coercives
++ Statements as expressions
++ Nil-Coalescing Operator (`??`)
++ Conditional Properties (`?`)
 
 ## Use
 

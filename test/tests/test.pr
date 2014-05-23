@@ -1,8 +1,5 @@
-import 'numbers.pr';
+import 'primitives/primitives.pr';
 import 'objects/objects.pr';
-import 'function.pr.ejs';
-import 'gen.pr.ejs';
-import 'async.pr.ejs';
-import 'range.pr';
+import 'functions/functions.pr';
 import 'syntax/syntax.pr';
 import 'operators/operators.pr';
