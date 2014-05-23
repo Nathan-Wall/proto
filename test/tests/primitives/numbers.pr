@@ -1,0 +1,23 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('Numbers', fn :{
+
+	describe('Literals', fn :{
+
+		it('works with leading decimals', fn :{
+			var x = .3;
+			assert.equal(x, 0.3);
+		});
+
+		it('works with leading decimals in a cascade block', fn :{
+			var foo = { a: 1 },
+				x = |foo| :{
+					.a;
+					.3;
+				};
+			assert.equal(x, 0.3);
+		});
+
+	});
+
+});

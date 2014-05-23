@@ -1,2 +1,3 @@
-import 'conditional-property.pr';
 import 'literals.pr';
+import 'conditional-property.pr';
+import 'destructuring.pr';

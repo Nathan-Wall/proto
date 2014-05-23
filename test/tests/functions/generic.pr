@@ -1,0 +1,120 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+fn testProps(f) :{
+
+	f = f.function;
+
+	it('has a #name property set correctly', fn :{
+		assert.equal(f.name, 'foo');
+	});
+
+	it('does not permit writing to #name', fn :{
+		assert.throws(fn :{
+			f.name = 'bar';
+		});
+	});
+
+	it('does not permit configuring #name', fn :{
+		assert.throws(fn :{
+			reflect.configure(f, 'name', #{
+				value: 'bar'
+			});
+		});
+	});
+
+	it('has an #arity property set correctly', fn :{
+		assert.equal(f.arity, 2);
+	});
+
+	it('does not permit writing to #arity', fn :{
+		assert.throws(fn :{
+			f.arity = 8;
+		});
+	});
+
+	it('does not permit configuring #arity', fn :{
+		assert.throws(fn :{
+			reflect.define(f, 'arity', #{
+				value: 8
+			});
+		});
+	});
+
+}
+
+fn runGenericTestSet(declaration, adapter) :{
+
+	describe(declaration ? 'Declarations' : 'Expressions', fn :{
+
+		describe('Dynamic `this`', fn :{
+
+			it('functions have dynamic this', async :{
+
+				var foo = adapter.create(declarataion, false).resolve,
+					x = { foo };
+
+				assert.equal(await foo(), nil);
+				assert.equal(await x.foo(), x);
+				assert.equal(await x::foo(), x);
+				assert.equal(await 4::foo(), 4);
+
+			});
+
+			testProps(adapter.create(declaration, false));
+			describe('#arity configured with `of`', fn :{
+				testProps(adapter.create(declaration, false, 2));
+			});
+
+			// TODO: test block scope
+
+		});
+
+		describe('Lexical `this`', fn :{
+
+			it('functions have lexical this', async :{
+
+				var foo = this::adapter.create(declaration, true).resolve,
+					x = { foo };
+
+				assert.equal(await foo(), this);
+				assert.equal(await x.foo(), this);
+				assert.equal(await x::foo(), this);
+				assert.equal(await 4::foo(), this);
+
+				var y = {
+					getBar: fn :{
+						return this::adapter.create(
+								declaration, true
+							).resolve;
+					}
+				};
+				var bar = y.getBar();
+	
+				x.bar = bar;
+
+				assert.equal(await bar(), y);
+				assert.equal(await x.bar(), y);
+				assert.equal(await x::bar(), y);
+				assert.equal(await 4::bar(), y);
+
+			});
+
+			testProps(adapter.create(declaration, true));
+			describe('#arity configured with `of`', fn :{
+				testProps(adapter.create(declaration, true, 2));
+			});
+
+		});
+
+	});
+
+}
+
+fn runGenericTests(adapter) :{
+	describe('Generic Tests', fn :{
+		for declaration of [ true, false ]:
+			runGenericTestSet(declaration, adapter);
+	});
+}
+
+export { runGenericTests };
