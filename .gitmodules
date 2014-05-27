@@ -2,3 +2,6 @@
 [submodule "lib/progenerator"]
 	path = lib/progenerator
 	url = git@github.com:Nathan-Wall/progenerator.git
+[submodule "lib/proprima"]
+	path = lib/proprima
+	url = git@github.com:Nathan-Wall/proprima.git

@@ -21,7 +21,7 @@ Proto supports the following features.  Some of the features are expected to be 
 + Modules
 + [Generators](docs/functions/generators.md)
 + [Promises](docs/functions/async/promises.md)
-+ `0b0101` and `0o12738` syntax for binary and octal numeric literals
++ `0b0101` and `0o12537` syntax for binary and octal numeric literals
 
 ### ECMAScript 7 (expected)
 
