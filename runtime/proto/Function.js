@@ -114,14 +114,13 @@ function CallOwnMethod(obj, key, args) {
 }
 
 function Bind(obj, receiver) {
-	var f = GetFunction(obj),
-		bound;
+	var f = GetFunction(obj);
 	if (obj.Receiver !== DYNAMIC_THIS)
 		receiver = obj.Receiver;
 	if (arguments.length == 1)
-	 	bound = lazyBind(f);
+	 	f = lazyBind(f);
 	return CreateFunction(
-		FunctionProto, bound, obj.name, obj.arity + 1, receiver
+		FunctionProto, f, obj.name, obj.arity + 1, receiver
 	);
 }
 
