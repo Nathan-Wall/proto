@@ -1,0 +1,34 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('Map', fn :{
+
+	it('#set and #get work with primitives', fn :{
+
+		var m = new Map();
+		m.set(1, 'foo');
+		m.set('a', 'bar');
+		m.set(true, { x: 1 });
+
+		assert.equal(m.get(1), 'foo');
+		assert.equal(m.get('a'), 'bar');
+		assert.equal(m.get(true).x, 1);
+
+	});
+
+	it('#set and #get work with objects', fn :{
+
+		var m = new Map(),
+			x = { },
+			y = { },
+			z = #{ foo: 1 };
+		m.set(x, 'foo');
+		m.set(y, 'bar');
+		m.set(z, { x: 1 });
+
+		assert.equal(m.get(x), 'foo');
+		assert.equal(m.get(y), 'bar');
+		assert.equal(m.get(z).x, 1);
+
+	});
+
+});

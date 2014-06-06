@@ -15,6 +15,10 @@ var jsonStringify = JSON.stringify,
 		Generator: GeneratorProto,
 		Date: DateProto,
 		reflect: reflect,
+		Map: MapProto,
+		WeakMap: WeakMapProto,
+		Set: SetProto,
+		WeakSet: WeakSetProto,
 		inf: Infinity,
 		NaN: NaN,
 
@@ -49,9 +53,7 @@ var jsonStringify = JSON.stringify,
 		}),
 
 		function: CreateFunction(undefined, function(value) {
-			if (!IsCallable(value))
-				throw new TypeError('Function expected');
-			return value;
+			return ExpectFunction(value);
 		}),
 
 		object: CreateFunction(undefined, function(value) {
@@ -82,6 +84,7 @@ var jsonStringify = JSON.stringify,
 				return proxyJs(jsonParse(value, reviver));
 			}
 		})
+
 	});
 
 function GetBuiltInGlobal(name) {

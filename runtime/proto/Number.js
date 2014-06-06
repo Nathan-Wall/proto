@@ -1,8 +1,7 @@
 var NumberProto = CreatePrototype({
 
 	init: function(value) {
-		if (!IsObject(this))
-			throw new TypeError('Object expected');
+		ExpectObject(this);
 		if (value === undefined)
 			value = '';
 		else

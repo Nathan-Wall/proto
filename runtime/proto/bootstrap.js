@@ -61,7 +61,12 @@ var Object = global.Object,
 	numberToString = lazyBind(Number.prototype.toString),
 	test = lazyBind(RegExp.prototype.test),
 
-	MAX_PRECISION = pow(2, 53),
+	// We set MAX_PRECISION to 2^53-1 because it's the last number we can be
+	// sure about having integer precision for when doing a calculation. For
+	// example, if we arrive at the number 2^53 we don't really know if the
+	// calculation should have resulted in 2^53 or 2^53+1.
+	MAX_PRECISION = pow(2, 53) - 1,
+	MIN_PRECISION = -MAX_PRECISION,
 	MAX_UINT = pow(2, 32) - 1,
 
 	DYNAMIC_THIS = create(null),
@@ -79,8 +84,7 @@ var Object = global.Object,
 
 // TODO: Probably replace with ToIterable once iterables are worked out
 function ToArray(value) {
-	if (!IsObject(value))
-		throw new TypeError('Object expected');
+	ExpectObject(value);
 	if (IsLike(value, ArrayProto))
 		return value;
 	var r = create(null);
@@ -152,8 +156,7 @@ function spliceAll(array, index, count, elements) {
 }
 
 function own(obj) {
-	if (Object(obj) !== obj)
-		throw new TypeError('Object expected');
+	expectObject(obj);
 	var O = create(null),
 		keys = getOwnPropertyNames(obj);
 	for (var i = 0, key; i < keys.length; i++) {
@@ -370,4 +373,17 @@ var createWrapper = (function() {
 
 function toWrapped() {
 	return Freeze(__convertFunctions__(this));
+}
+
+// A safer alternative to using arrays
+function createSack(array) {
+	var sack = create(null);
+	if (array === undefined)
+		sack.length = 0;
+	else {
+		for (var i = 0; i < array.length; i++)
+			sack[i] = array[i];
+		sack.length = array.length;
+	}
+	return sack;
 }

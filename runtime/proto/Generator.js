@@ -39,13 +39,11 @@ function CreateGeneratorFunction(proto, progeneratedFn, name, arity, receiver) {
 
 function GeneratorInit(generator, args, receiver) {
 
-	if (!IsObject(generator))
-		throw new TypeError('Object expected');
+	ExpectObject(generator);
 	if (!('GeneratorStart' in generator))
 		throw new TypeError('Generator prototype expected');
 
-	if (!IsObject(args))
-		throw new TypeError('Object expected');
+	ExpectObject(args);
 
 	generator.InnerFn = bind(
 		apply(generator.GeneratorStart, receiver, args.Value),
@@ -83,8 +81,7 @@ function GeneratorAssertCanInvoke(generator) {
 }
 
 function GeneratorNext(generator, value) {
-	if (!IsObject(generator))
-		throw new TypeError('Object expected');
+	ExpectObject(generator);
 	if (!('GeneratorState' in generator))
 		throw new TypeError('Generator expected');
 	GeneratorAssertCanInvoke(generator);
@@ -101,8 +98,7 @@ function GeneratorNext(generator, value) {
 }
 
 function GeneratorThrow(generator, exception) {
-	if (!IsObject(generator))
-		throw new TypeError('Object expected');
+	ExpectObject(generator);
 	if (!('GeneratorState' in generator))
 		throw new TypeError('Generator expected');
 	GeneratorAssertCanInvoke(generator);
@@ -135,8 +131,7 @@ function GeneratorHandleDelegate(generator, method, arg) {
 		}
 
 		if (info !== undefined) {
-			if (!IsObject(info))
-				throw new TypeError('Object expected');
+			ExpectObject(info);
 			if (info.Value.done) {
 				generator.GeneratorContext[delegate.resultName] = info.Value.value;
 				generator.GeneratorContext.next = delegate.nextLoc;
@@ -279,8 +274,7 @@ var GeneratorContext = (function() {
 
 			var info = GeneratorNext(generator, this.sent);
 
-			if (!IsObject(info))
-				throw new TypeError('Object expected');
+			ExpectObject(info);
 
 			if (info.Value.done) {
 				this.delegate = null;

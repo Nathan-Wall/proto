@@ -6,8 +6,7 @@
 var PromiseProto = CreatePrototype({
 
 	init: function init(resolver) {
-		if (!IsCallable(resolver))
-			throw new TypeError('Function expected');
+		ExpectFunction(resolver);
 		PromiseInit(this, resolver);
 	},
 
@@ -43,16 +42,13 @@ function CastToPromise(P, x) {
 
 function GetDeferred(P) {
 	var deferred, resolver, promise;
-	if (!IsObject(P))
-		throw new TypeError('Object expected');
+	ExpectObject(P);
 	deferred = { Promise: undefined, Resolve: undefined, Reject: undefined };
 	resolver = CreateDeferredConstructionFunction();
 	resolver.Deferred = deferred;
 	promise = New(P, [ resolver ]);
-	if (!IsCallable(deferred.Resolve))
-		throw new TypeError('Function expected');
-	if (!IsCallable(deferred.Reject))
-		throw new TypeError('Function expected');
+	ExpectFunction(deferred.Resolve);
+	ExpectFunction(deferred.Reject);
 	deferred.Promise = promise;
 	return deferred;
 }
@@ -269,19 +265,11 @@ function PromiseThen(promise, onFulfilled, onRejected) {
 		resolveReaction,
 		rejectReaction;
 	rejectionHandler = deferred.Reject;
-	if (onRejected !== undefined) {
-		if (IsCallable(onRejected))
-			rejectionHandler = onRejected;
-		else
-			throw new TypeError('Function expected');
-	}
+	if (onRejected !== undefined)
+		rejectionHandler = ExpectFunction(onRejected);
 	fulfillmentHandler = deferred.Resolve;
-	if (onFulfilled !== undefined) {
-		if (IsCallable(onFulfilled))
-			fulfillmentHandler = onFulfilled;
-		else
-			throw new TypeError('Function expected');
-	}
+	if (onFulfilled !== undefined)
+		fulfillmentHandler = ExpectFunction(onFulfilled);
 	resolutionHandler = CreatePromiseResolutionHandlerFunction();
 	resolutionHandler.FulfillmentHandler = fulfillmentHandler;
 	resolutionHandler.RejectionHandler = rejectionHandler;

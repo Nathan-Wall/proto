@@ -52,15 +52,12 @@ function CreateObject(proto, properties, staticProps, extendedProps) {
 		protoValue = null;
 	else
 		protoValue = proto.Value;
-	if (properties !== undefined) {
-		if (!isObject(properties))
-			throw new TypeError('Object expected');
-	}
+	if (properties !== undefined)
+		expectObject(properties);
 	wrapper = create(proto);
 	wrapper.Value = like(protoValue, properties);
 	if (staticProps !== undefined) {
-		if (!isObject(staticProps))
-			throw new TypeError('Object expected');
+		expectObject(staticProps);
 		wrapper.Static = own(staticProps);
 	}
 	if (extendedProps !== undefined)
@@ -159,6 +156,18 @@ function IsObject(value) {
 	return IsWrapper(value) && !value.Primitive;
 }
 
+function expectObject(value) {
+	if (!isObject(value))
+		throw new TypeError('Object expected');
+	return value;
+}
+
+function ExpectObject(value) {
+	if (!IsObject(value))
+		throw new TypeError('Object expected');
+	return value;
+}
+
 function IsPrimitiveWrapper(value) {
 	return IsWrapper(value) && !!value.Primitive;
 }
@@ -200,8 +209,7 @@ function IsLike(obj, proto) {
 }
 
 function Own(obj) {
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
+	ExpectObject(obj);
 	var O = CreateObject(null),
 		keys = getOwnPropertyNames(obj),
 		i, key;
@@ -243,9 +251,7 @@ function Has(obj, key) {
 		return false;
 	if (IsWrapper(key)) {
 		if ('Has' in key) {
-			HasF = key.Has;
-			if (!IsCallable(HasF))
-				throw new TypeError('Function expected');
+			HasF = ExpectFunction(key.Has);
 			return Call(HasF, key, [ obj ]);
 		}
 		else
@@ -264,9 +270,7 @@ function HasOwn(obj, key) {
 		return false;
 	if (IsWrapper(key)) {
 		if ('HasOwn' in key) {
-			HasF = key.HasOwn;
-			if (!IsCallable(HasF))
-				throw new TypeError('Function expected');
+			HasF = ExpectFunction(key.HasOwn);
 			return Call(HasF, key, [ obj ]);
 		}
 		else
@@ -289,9 +293,7 @@ function Get(obj, key, receiver) {
 		receiver = undefined;
 	if (IsWrapper(key)) {
 		if ('Get' in key) {
-			GetF = key.Get;
-			if (!IsCallable(GetF))
-				throw new TypeError('Function expected');
+			GetF = ExpectFunction(key.Get);
 			return Call(GetF, key, [ obj, receiver ]);
 		}
 		else
@@ -321,9 +323,7 @@ function Get(obj, key, receiver) {
 			if (desc == null)
 				return undefined;
 			else if (hasOwn(desc, 'get')) {
-				get = desc.get;
-				if (typeof get != 'function')
-					throw new TypeError('Function expected');
+				get = expectFunction(desc.get);
 				if (obj.ProxyJs) {
 					// TODO: Can this just be
 					//     return proxyJs(call(get, receiver));
@@ -366,9 +366,7 @@ function GetOwn(obj, key, receiver) {
 		return undefined;
 	if (IsWrapper(key)) {
 		if ('GetOwn' in key) {
-			GetF = key.GetOwn;
-			if (!IsCallable(GetF))
-				throw new TypeError('Function expected');
+			GetF = ExpectFunction(key.GetOwn);
 			return Call(GetF, key, [ obj, receiver ]);
 		}
 		else
@@ -386,16 +384,13 @@ function Set(obj, key, value, receiver) {
 	var desc, set, SetF, K, R, handle = I, O;
 	if (obj === null || obj === undefined)
 		throw new TypeError('Cannot set property of nil');
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
+	ExpectObject(obj);
 	if (obj.ProxyJs)
 		handle = UnwrapProto;
 	// TODO: Symbol setters
 	if (IsWrapper(key)) {
 		if ('Set' in key) {
-			SetF = key.Set;
-			if (!IsCallable(SetF))
-				throw new TypeError('Function expected');
+			SetF = ExpectFunction(key.Set);
 			value = handle(value);
 			Call(SetF, key, [ obj, value, receiver ]);
 			return value;
@@ -460,13 +455,10 @@ function SetOwn(obj, key, value, receiver) {
 	var K, SetF;
 	if (obj === null || obj === undefined)
 		throw new TypeError('Cannot set property of nil');
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
+	ExpectObject(obj);
 	if (IsWrapper(key)) {
 		if ('SetOwn' in key) {
-			SetF = key.SetOwn;
-			if (!IsCallable(SetF))
-				throw new TypeError('Function expected');
+			SetF = ExpectFunction(key.SetOwn);
 			value = handle(value);
 			Call(SetF, key, [ obj, value, receiver ]);
 			return value;
@@ -498,13 +490,10 @@ function Delete(obj, key) {
 	var K, O;
 	if (obj === null || obj === undefined)
 		throw new TypeError('Cannot delete property of nil');
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
+	ExpectObject(obj);
 	if (IsWrapper(key)) {
 		if ('Delete' in key) {
-			DeleteF = key.Delete;
-			if (!IsCallable(DeleteF))
-				throw new TypeError('Function expected');
+			DeleteF = ExpectFunction(key.Delete);
 			return !!Call(DeleteF, key, [ obj ]);
 		}
 		else
@@ -555,8 +544,7 @@ function GetOwnKeys(obj) {
 }
 
 function Freeze(obj) {
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
+	ExpectObject(obj);
 	freeze(obj.Value);
 	if (hasOwn(obj, 'Static'))
 		freeze(obj.Static);
@@ -565,8 +553,7 @@ function Freeze(obj) {
 
 function GetDescriptor(obj, key) {
 	var O, isStatic = false;
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
+	ExpectObject(obj);
 	// TODO: what if key is a symbol or private symbol?
 	if (IsWrapper(key) && 'SymbolId' in key) {
 		key = key.SymbolId;
@@ -607,8 +594,7 @@ function GetDescriptor(obj, key) {
 }
 
 function GetOwnDescriptor(obj, key) {
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
+	ExpectObject(obj);
 	key = ToString(key);
 	if (hasOwn(obj.Value, key)
 	|| hasOwn(obj, 'Static') && hasOwn(obj.Static, key))
@@ -679,14 +665,13 @@ function concatUncommonNames(from, compareWith) {
 function Like(obj) {
 	if (obj === undefined)
 		obj = null;
-	if (obj !== null && !IsObject(obj))
-		throw new TypeError('Object expected');
+	if (obj !== null)
+		ExpectObject(obj);
 	return CreateObject(obj);
 }
 
 function New(obj, args) {
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
+	ExpectObject(obj);
 	var newObj = CreateObject(obj),
 		init = Get(newObj, 'init');
 	if (IsCallable(init))
@@ -696,14 +681,12 @@ function New(obj, args) {
 
 function mixin(mixinWhat, mixinWith, withHandler) {
 
-	if (!isObject(mixinWhat))
-		throw new TypeError('Object expected');
+	expectObject(mixinWhat);
 
 	if (!isExtensible(mixinWhat))
 		throw new Error('Cannot mixin on non-exensible object');
 
-	if (!isObject(mixinWith))
-		throw new TypeError('Object expected');
+	expectObject(mixinWith);
 
 	var keys = getUncommonPropertyNames(mixinWith, mixinWhat),
 		key, whatDesc, withDesc;
@@ -734,13 +717,11 @@ function mixin(mixinWhat, mixinWith, withHandler) {
 // rather than using `mixin` and remove the weird `withHandler` stuff from
 // `mixin`.
 function Mixin(to, from) {
-	if (!IsObject(to))
-		throw new TypeError('Object expected');
+	ExpectObject(to);
 	// Mixin with nil as the second arg is ignored.
 	if (from === null || from === undefined)
 		return to;
-	if (!IsObject(from))
-		throw new TypeError('Object expected');
+	ExpectObject(from);
 	// TODO: Deal with JS proxied objects.
 	var toProxy = 'ProxyJs' in to,
 		fromProxy = 'ProxyJs' in from,
@@ -757,15 +738,13 @@ function Mixin(to, from) {
 }
 
 function GetPrototype(obj) {
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
+	ExpectObject(obj);
 	return getPrototypeOf(obj);
 }
 
 function Define(obj, kind, key, value, isStatic, writable, configurable) {
 	// TODO: Permit this operation on wrappers?
-	if (!IsObject(obj))
-		throw new TypeError('Object expected');
+	ExpectObject(obj);
 	var O, desc = create(null), d, prop,
 		isSymbol = IsWrapper(key) && 'SymbolId' in key;
 	if (isStatic) {
@@ -792,8 +771,7 @@ function Define(obj, kind, key, value, isStatic, writable, configurable) {
 	}
 	// TODO: Make accessors correctly pass through membranes (does this work?)
 	else if (kind == 'get' || kind == 'set') {
-		if (!IsCallable(value))
-			throw new TypeError('Function expected');
+		ExpectFunction(value);
 		d = getOwnPropertyDescriptor(O, key);
 		if (d !== undefined && IsAccessor(d.value))
 			desc.value = d.value;
@@ -838,8 +816,7 @@ function createSafeDescriptor(obj) {
 
 function getPropertyDescriptor(obj, key) {
 	var desc, K;
-	if (!isObject(obj))
-		throw new TypeError('Object expected');
+	expectObject(obj);
 	K = String(key);
 	do {
 		desc = getOwnPropertyDescriptor(obj, K);

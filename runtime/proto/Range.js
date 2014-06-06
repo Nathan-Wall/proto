@@ -23,8 +23,7 @@ function CreateRange(proto, inclusive, from, to, step) {
 var RangeProto = CreatePrototype({
 
 	'@Iterator': function iterator() {
-		if (!IsObject(this))
-			throw new TypeError('Object expected');
+		ExpectObject(this);
 		if (!('RangeFrom' in this) || !('RangeTo' in this))
 			throw new TypeError('Range expected');
 		var iter = CreateObject(RangeIteratorProto);
@@ -38,8 +37,7 @@ var RangeProto = CreatePrototype({
 	},
 
 	'@Get': function get(obj, receiver) {
-		if (!IsObject(this))
-			throw new TypeError('Object expected');
+		ExpectObject(this);
 		if (!('RangeFrom' in this) || !('RangeTo' in this))
 			throw new TypeError('Range expected');
 		return Slice(obj, this.RangeFrom, this.RangeTo, receiver);
@@ -60,8 +58,7 @@ var RangeProto = CreatePrototype({
 
 var RangeIteratorProto = CreateObject(undefined, {
 	next: CreateFunction(undefined, function() {
-		if (!IsObject(this))
-			throw new TypeError('Object expected');
+		ExpectObject(this);
 		if (!('RangeIteratorFrom' in this))
 			throw new TypeError('Range iterator expected');
 		var from = this.RangeIteratorFrom,
@@ -95,8 +92,7 @@ var RangeIteratorProto = CreateObject(undefined, {
 });
 
 function ModifyRangeStep(range, step) {
-	if (!IsObject(range))
-		throw new TypeError('Object expected');
+	ExpectObject(range);
 	if (!('RangeFrom' in range))
 		throw new TypeError('Range expected');
 	return CreateRange(

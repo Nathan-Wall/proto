@@ -5,24 +5,21 @@ var consoleLog = getConsoleMethod('log'),
 	console = CreatePrototype({
 
 		log: function log(/* ...values */) {
-			if (!IsObject(this))
-				throw new TypeError('Object expected');
+			ExpectObject(this);
 			if (this !== console && !IsLike(this, console))
 				throw new TypeError('Console object expected');
 			CallConsoleMethod(consoleLog, arguments);
 		},
 
 		error: function error(/* ...values */) {
-			if (!IsObject(this))
-				throw new TypeError('Object expected');
+			ExpectObject(this);
 			if (this !== console && !IsLike(this, console))
 				throw new TypeError('Console object expected');
 			CallConsoleMethod(consoleError, arguments);
 		},
 
 		warn: function warn(/* ...values */) {
-			if (!IsObject(this))
-				throw new TypeError('Object expected');
+			ExpectObject(this);
 			if (this !== console && !IsLike(this, console))
 				throw new TypeError('Console object expected');
 			CallConsoleMethod(consoleWarn, arguments);

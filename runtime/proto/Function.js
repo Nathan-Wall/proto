@@ -3,8 +3,7 @@ var FunctionProto = CreatePrototype({
 	// TODO: make length setting work
 
 	insert: function insert(index) {
-		if (!IsCallable(this))
-			throw new TypeError('Function expected');
+		ExpectFunction(this);
 		var index = ToUint32(index),
 			args = slice(arguments, 1);
 		// TODO: 
@@ -13,8 +12,7 @@ var FunctionProto = CreatePrototype({
 	},
 
 	prepend: function prepend() {
-		if (!IsCallable(this))
-			throw new TypeError('Function expected');
+		ExpectFunction(this);
 		var f = this,
 			preArgs = slice(arguments);
 		return CreateFunction(undefined, function() {
@@ -24,8 +22,7 @@ var FunctionProto = CreatePrototype({
 	},
 
 	append: function append() {
-		if (!IsCallable(this))
-			throw new TypeError('Function expected');
+		ExpectFunction(this);
 		var f = this,
 			preArgs = slice(arguments);
 		return CreateFunction(undefined, function() {
@@ -47,8 +44,7 @@ function CreateFunction(proto, jsfn, name, arity, receiver) {
 }
 
 function FunctionInit(obj, jsfn, name, arity, receiver) {
-	if (typeof jsfn != 'function')
-		throw new TypeError('Function expected');
+	expectFunction(jsfn);
 	if (arity === undefined)
 		arity = jsfn.length;
 	else
@@ -89,13 +85,8 @@ function Call(f, receiver, args) {
 }
 
 function GetFunction(F) {
-	var f;
-	if (!IsObject(F))
-		throw new TypeError('Function expected');
-	f = F.Function;
-	if (typeof f != 'function')
-		throw new TypeError('Function expected');
-	return f;
+	ExpectFunction(F);
+	return F.Function;
 }
 
 function CallMethod(obj, key, args) {
@@ -125,8 +116,7 @@ function Bind(obj, receiver) {
 }
 
 function AsCoercive(f, nilable) {
-	if (!IsCallable(f))
-		throw new TypeError('Function expected');
+	ExpectFunction(f);
 	if (nilable)
 		return CreateFunction(null, function(value) {
 			if (value === null || value === undefined)
@@ -137,8 +127,7 @@ function AsCoercive(f, nilable) {
 }
 
 function PartiallyApply(f, appliedArgs) {
-	if (!IsCallable(f))
-		throw new TypeError('Function expected');
+	ExpectFunction(f);
 	if (!isArray(appliedArgs))
 		throw new TypeError('Array expected');
 	return CreateFunction(undefined, function() {
@@ -233,4 +222,16 @@ function PartiallApplyIterable(iterable, args, unusedIndices) {
 		push(insert, args[index]);
 		unusedIndices[index] = false;
 	}
+}
+
+function expectFunction(f) {
+	if (typeof f != 'function')
+		throw new TypeError('Function expected');
+	return f;
+}
+
+function ExpectFunction(F) {
+	if (!IsCallable(F))
+		throw new TypeError('Function expected');
+	return F;
 }

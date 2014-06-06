@@ -3,3 +3,4 @@ import 'objects/objects.pr';
 import 'functions/functions.pr';
 import 'syntax/syntax.pr';
 import 'operators/operators.pr';
+import 'built-ins/built-ins.pr';

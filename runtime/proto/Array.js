@@ -59,6 +59,9 @@ var ArrayProto = CreatePrototype({
 		return CreateArray(undefined, sort(slice(O.Value), T));
 	}
 
+	// Note: forEach is intentionally left out of proto since `for..of` can
+	// be used for the same purpose and has the benefit of allowing breaking.
+
 });
 
 var ArrayIteratorPrototype = CreatePrototype({
@@ -67,8 +70,7 @@ var ArrayIteratorPrototype = CreatePrototype({
 
 	next: function next() {
 		var O = this;
-		if (!IsObject(O))
-			throw new TypeError('Object expected');
+		ExpectObject(O);
 		if (!('ArrayIteratorNextIndex' in O))
 			throw new TypeError('ArrayIterator expected');
 		var a = O.IteratedObject;
@@ -112,8 +114,7 @@ function CreateArray(proto, elements) {
 		proto = ArrayProto;
 	obj = CreateObject(proto);
 	if (elements !== undefined) {
-		if (Object(elements) !== elements)
-			throw new TypeError('Object expected');
+		expectObject(elements);
 		L = ToInteger(elements.length);
 		for (var i = 0; i < L; i++)
 			SetOwn(obj, i, elements[i]);
@@ -135,10 +136,8 @@ function CreateArray(proto, elements) {
 }
 
 function PushAll(to, from) {
-	if (!IsObject(to))
-		throw new TypeError('Object expected');
-	if (!IsObject(from))
-		throw new TypeError('Object expected');
+	ExpectObject(to);
+	ExpectObject(from);
 	pushAll(to.Value, from.Value);
 }
 

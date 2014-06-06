@@ -3,8 +3,7 @@
 
 function GetIterator(iterable) {
 	var iterator, I;
-	if (!IsObject(iterable))
-		throw new TypeError('Object expected');
+	ExpectObject(iterable);
 	I = Get(iterable, $$iterator);
 	if (!IsCallable(I))
 		throw new TypeError('Iterable expected');
@@ -15,23 +14,18 @@ function GetIterator(iterable) {
 }
 
 function IteratorNext(iterator, value) {
-	if (!IsObject(iterator))
-		throw new TypeError('Object expected');
+	ExpectObject(iterator);
 	var result = CallMethod(iterator, 'next', [ value ]);
-	if (!IsObject(result))
-		throw new TypeError('Object expected');
-	return result;
+	return ExpectObject(result);
 }
 
 function IteratorComplete(iterResult) {
-	if (!IsObject(iterResult))
-		throw new TypeError('Object expected');
+	ExpectObject(iterResult);
 	return !!Get(iterResult, 'done');
 }
 
 function IteratorValue(iterResult) {
-	if (!IsObject(iterResult))
-		throw new TypeError('Object expected');
+	ExpectObject(iterResult);
 	return Get(iterResult, 'value');	
 }
 

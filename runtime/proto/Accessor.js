@@ -17,16 +17,14 @@ function CreateAccessor() {
 function DefineAccessorGet(acc, fn) {
 	if (!IsAccessor(acc))
 		throw new TypeError('Accessor expected');
-	if (!IsCallable(fn))
-		throw new TypeError('Function expected');
+	ExpectFunction(fn);
 	acc.AccessorGet = fn;
 }
 
 function DefineAccessorSet(acc, fn) {
 	if (!IsAccessor(acc))
 		throw new TypeError('Accessor expected');
-	if (!IsCallable(fn))
-		throw new TypeError('Function expected');
+	ExpectFunction(fn);
 	acc.AccessorSet = fn;
 }
 
