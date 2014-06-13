@@ -1,0 +1,25 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('Array Initializers', fn :{
+
+	it('Creates an array with the completion values of `if` and `for` '
+		+ 'expressions',
+		fn :{
+
+			var array = [
+				if true:
+					1
+				else:
+					2,
+				for i of 0 .. 10:
+					3
+			];
+
+			assert.equal(array.length, 2);
+			assert.equal(array[0], 1);
+			assert.equal(array[1], 3);
+
+		}
+	);
+
+});
