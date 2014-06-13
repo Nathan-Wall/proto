@@ -4,7 +4,7 @@ describe('Array Comprehensions', fn :{
 
 	it('Works', fn :{
 
-		var array = [ for x of 0..10: 2 * x ];
+		var array = [: for x of 0..10: each 2 * x; ];
 
 		assert.equal(array.length, 10);
 
