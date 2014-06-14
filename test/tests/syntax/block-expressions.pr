@@ -54,7 +54,7 @@ describe('Block Expressions', fn :{
 			);
 
 			it('sets completion value to the value of the statement prior to '
-				+ 'anonymous `break`',
+				& 'anonymous `break`',
 				fn :{
 					var x = for i of 0 .. 10 :{
 						if i > 5 :{
@@ -68,7 +68,20 @@ describe('Block Expressions', fn :{
 			);
 
 			it('sets completion value to the value of the statement prior to '
-				+ 'named `break`',
+				& 'anonymous `break` (B)',
+				fn :{
+					var x = for i of 0 .. 10 :{
+						if i > 5 :{
+							i * 7;
+							break;
+						}
+					};
+					assert.equal(x, 42);
+				}
+			);
+
+			it('sets completion value to the value of the statement prior to '
+				& 'named `break`',
 				fn :{
 					var x = :foo for i of 0 .. 10 :{
 						for j of 0 .. 10 :{
