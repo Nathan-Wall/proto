@@ -1,3 +1,4 @@
 import 'function.pr.ejs';
 import 'gen.pr.ejs';
 import 'async.pr.ejs';
+import 'partial-application.pr';

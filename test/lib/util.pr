@@ -24,6 +24,24 @@ assert.equal = fn(a, b, m) :{
 	);
 };
 
+assert.deepEqual = fn(a, b, m) :{
+	if m == nil:
+		m = 'Expected ' & JSON.stringify(a)
+			& ' to deeply equal ' & JSON.stringify(b);
+	var keys = reflect.keys(a);
+	assert.equal(keys.length, reflect.keys(b).length, m);
+	for key of keys :{
+		var aValue = a[key],
+			bValue = b[key];
+		assert.equal(typeof aValue, typeof bValue, m);
+		if typeof aValue == 'object':
+			assert.deepEqual(aValue, bValue, m);
+		else:
+			assert.equal(aValue, bValue, m);
+	}
+
+};
+
 assert.property = fn(a, b, m) :{
 	return assert(b in a, m ?? 'Expected property ' & b);
 };

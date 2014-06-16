@@ -1,0 +1,24 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('Partial application', fn :{
+
+	it('passes the arguments specified by a generator slot', fn :{
+
+		fn foo(...args) :{
+			return [ ...args ];
+		}
+
+		var bar = foo:(
+				'red', <(: yield 1; yield 0; yield 2; )>,
+				'blue', 'orange', 'green'
+			),
+			result = bar('spot 1', 'spot 2', 'spot 3');
+
+		assert.deepEqual(
+			result,
+			[ 'red', 'spot 2', 'spot 1', 'spot 3', 'blue', 'orange', 'green' ]
+		);
+
+	});
+
+});
