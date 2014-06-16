@@ -1,0 +1,43 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('Bind Operator', fn :{
+
+	describe('with an implicit object', fn :{
+
+		it('only retrieves the object to bind to once', fn :{
+
+			var getCount = 0;
+
+			var foo = {
+				get bar :{
+					getCount++;
+					return { baz: fn : nil };
+				}
+			};
+
+			::foo.bar.baz;
+
+			assert.equal(getCount, 1);
+
+		});
+
+		it('only retrieves the object to bind to once when called', fn :{
+
+			var getCount = 0;
+
+			var foo = {
+				get bar :{
+					getCount++;
+					return { baz: fn : nil };
+				}
+			};
+
+			::foo.bar.baz();
+
+			assert.equal(getCount, 1);
+
+		});
+
+	});
+
+});
