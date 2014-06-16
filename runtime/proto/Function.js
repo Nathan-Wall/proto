@@ -153,11 +153,10 @@ function PartiallyApply(f, appliedArgs) {
 					push(args, arguments[slot]);
 				}
 				else if (slot != null && IsObject(slot) && Has(slot, $$iterator)) {
-					insert = PartiallApplyIterable(
+					insert = PartiallyApplyIterable(
 						slot, arguments, unusedIndices
 					);
-					spliceAll(args, i, 1, insert);
-					i += insert.length - 1;
+					pushAll(args, insert);
 				}
 				else if (slot === null)
 					push(args, arg);
@@ -209,7 +208,7 @@ function PartiallyApplyRest(unusedIndices, args) {
 	return insert;
 }
 
-function PartiallApplyIterable(iterable, args, unusedIndices) {
+function PartiallyApplyIterable(iterable, args, unusedIndices) {
 	var iter = GetIterator(iterable),
 		insert = create(null),
 		index, next;

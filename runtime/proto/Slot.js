@@ -8,7 +8,9 @@ var SlotProto = CreatePrototype({
 		ExpectObject(this);
 		if (!('Slot' in this))
 			throw new Error('Slot expected');
-		if (this.RestSlot || this.Slot === null)
+		if (this.RestSlot
+		|| this.Slot === null
+		|| typeof this.Slot != 'number')
 			return NaN;
 		return +this.Slot;
 	}
