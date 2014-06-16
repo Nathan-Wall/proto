@@ -2,6 +2,15 @@ var SlotProto = CreatePrototype({
 
 	init: function init(value) {
 		SlotInit(this, value, false);
+	},
+
+	'@ToNumber': function ToNumber() {
+		ExpectObject(this);
+		if (!('Slot' in this))
+			throw new Error('Slot expected');
+		if (this.RestSlot || this.Slot === null)
+			return NaN;
+		return +this.Slot;
 	}
 
 });

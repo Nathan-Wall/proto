@@ -9,7 +9,7 @@ var NumberProto = CreatePrototype({
 		this.NumberValue = value;
 	},
 
-	toString: function(radix) {
+	'@ToString': function(radix) {
 		return numberToString(ToNumber(this), radix);
 	}
 
