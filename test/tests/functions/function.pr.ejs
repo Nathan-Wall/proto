@@ -48,6 +48,22 @@ describe('Functions', fn :{
 
 			});
 
+			it('hoists a function called by another previous hoisted funciton',
+				fn :{
+
+					fn foo :{
+						return bar();
+					}
+
+					fn bar :{
+						return 23;
+					}
+
+					assert.equal(foo(), 23);
+
+				}
+			);
+
 		});
 
 		describe('Lexical `this`', fn :{
