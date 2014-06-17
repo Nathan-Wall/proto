@@ -115,4 +115,67 @@ describe('Async Functions', fn :{
 
 	});
 
+	it('rejects with the correct value when an object is thrown (A)', async :{
+
+		async foo :{
+			throw { a: 'from foo' };
+		}
+
+		try :{
+			await foo();
+		}
+		catch e :{
+			assert.equal(e.a, 'from foo');
+		}
+
+	});
+
+	it('rejects with the correct value when an object is thrown (B)', async :{
+
+		async foo :{
+			throw { a: 'from foo' };
+		}
+
+		async bar :{
+			await foo();
+		}
+
+		try :{
+			await bar();
+		}
+		catch e :{
+			assert.equal(e.a, 'from foo');
+		}
+
+	});
+
+	it('rejects with the correct value when an object is thrown (C)', async :{
+
+		var resolve,
+			p = new Promise(fn(res) :{
+				resolve = res;
+			});
+
+		async foo :{
+			throw { a: 'from foo' };
+		}
+
+		async bar :{
+			await foo();
+		}
+
+		bar().catch(fn(e) :{
+			try :{
+				assert.equal(e.a, 'from foo');
+			}
+			catch e :{
+				return resolve(Promise.reject(e));
+			}
+			resolve();
+		});
+
+		await p;
+
+	});
+
 });

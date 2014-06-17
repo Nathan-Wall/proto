@@ -182,12 +182,8 @@ function proxyJs(value) {
 				receiver = receiver.Value;
 			for (var i = 0, arg; i < arguments.length; i++) {
 				arg = arguments[i];
-				if (IsWrapper(arg)) {
-					if (arg.ProxyJs)
-						arg = UnproxyJs(arg);
-					else
-						arg = UnwrapProto(arg);
-				}
+				if (IsWrapper(arg))
+					arg = UnwrapProto(arg);
 				push(args, arg);
 			}
 			return proxyJs(apply(value, receiver, args));
@@ -197,17 +193,13 @@ function proxyJs(value) {
 	return p;
 }
 
-function UnproxyJs(value) {
-	if (IsObject(value))
-		return value.Value;
-	return value;
-}
-
 // TODO: Some work will probably need to be done on this for functions...
 function UnwrapProto(value) {
 	var res, V, ks;
 	if (!IsWrapper(value))
 		return value;
+	if (value.ProxyJs)
+		return value.Value;
 	// primitive extensions, like symbols, can't be passed out of the system
 	if (value.Primitive)
 		return undefined;

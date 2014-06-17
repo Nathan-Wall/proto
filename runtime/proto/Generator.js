@@ -93,7 +93,7 @@ function GeneratorNext(generator, value) {
 	while (true) try {
 		return GeneratorInvoke(generator);
 	} catch (exception) {
-		generator.GeneratorContext.dispatchException(exception);
+		generator.GeneratorContext.dispatchException(proxyJs(exception));
 	}
 }
 
@@ -107,14 +107,14 @@ function GeneratorThrow(generator, exception) {
 		return delegateInfo;
 	if (generator.GeneratorState === GenStateSuspendedStart) {
 		generator.GeneratorState = GenStateCompleted;
-		throw exception;
+		throw UnwrapProto(exception);
 	}
 	while (true) {
 		generator.GeneratorContext.dispatchException(exception);
 		try {
 			return GeneratorInvoke(generator);
 		} catch (thrown) {
-			exception = thrown;
+			exception = proxyJs(thrown);
 		}
 	}
 }
@@ -127,7 +127,7 @@ function GeneratorHandleDelegate(generator, method, arg) {
 			info = method(delegate.generator, arg);
 		} catch (uncaught) {
 			generator.GeneratorContext.delegate = null;
-			return GeneratorThrow(generator, uncaught);
+			return GeneratorThrow(generator, proxyJs(uncaught));
 		}
 
 		if (info !== undefined) {
@@ -204,7 +204,7 @@ var GeneratorContext = (function() {
 			if (hasOwn(this, "thrown")) {
 				var thrown = this.thrown;
 				delete this.thrown;
-				throw thrown;
+				throw UnwrapProto(thrown);
 			}
 
 			return this.rval;
@@ -246,7 +246,7 @@ var GeneratorContext = (function() {
 			finallyEntries.length = 0;
 
 			if (this.done)
-				throw exception;
+				throw UnwrapProto(exception);
 
 			// Dispatch the exception to the "end" location by default.
 			this.thrown = exception;

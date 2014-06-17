@@ -25,7 +25,7 @@ function AsyncNext(gen, send) {
 		AsyncHandleResult(gen, GeneratorNext(gen, send));
 	}
 	catch (x) {
-		Call(gen.AsyncReject, undefined, [ x ]);
+		Call(gen.AsyncReject, undefined, [ proxyJs(x) ]);
 		return;
 	}
 }
@@ -35,7 +35,7 @@ function AsyncThrow(gen, exception) {
 		AsyncHandleResult(gen, GeneratorThrow(gen, exception));
 	}
 	catch (x) {
-		Call(gen.AsyncReject, undefined, [ x ]);
+		Call(gen.AsyncReject, undefined, [ proxyJs(x) ]);
 		return;
 	}
 }
