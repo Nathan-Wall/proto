@@ -50,7 +50,7 @@ fn runGenericTestSet(declaration, adapter) :{
 
 			it('functions have dynamic this', async :{
 
-				var foo = adapter.create(declarataion, false).resolve,
+				var foo = adapter.create(declaration, false).resolve,
 					x = { foo };
 
 				assert.equal(await foo(), nil);
