@@ -1,3 +1,4 @@
 import 'literals.pr';
 import 'conditional-property.pr';
 import 'destructuring.pr';
+import 'js-magic.pr';

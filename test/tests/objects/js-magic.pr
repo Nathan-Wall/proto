@@ -1,0 +1,335 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('Object Literals', fn :{
+
+	// TODO: test '__defineGetter__', '__defineSetter__',
+	// '__lookupGetter__', '__lookupSetter__', '__noSuchMethod__'
+
+	describe('__proto__', fn :{
+
+		it('starts as nil', fn :{
+			var o = { };
+			assert.equal(o.__proto__, nil);
+			assert.equal(o['__proto__'], nil);
+			assert.equal(o#__proto__, nil);
+			assert.equal(o#['__proto__'], nil);
+		});
+
+		it('starts as not in object', fn :{
+			var o = { };
+			assert('__proto__' !in o);
+			assert('__proto__' !in #o);
+			assert(!reflect.has(o, '__proto__'));
+			assert(!reflect.hasOwn(o, '__proto__'));
+		});
+
+		it('isn\'t magic in non-computed object initializer', fn :{
+
+			var p = { foo: 1 },
+				o = { __proto__: p };
+
+			assert.equal(o.foo, nil);
+
+		});
+
+		it('isn\'t magic in computed object initializer', fn :{
+
+			var p = { foo: 1 },
+				o = { '__proto__': p };
+
+			assert.equal(o.foo, nil);
+
+		});
+
+		it('isn\'t magic in non-computed property setter', fn :{
+
+			var p = { foo: 1},
+				o = { };
+
+			o.__proto__ = p;
+			assert.equal(o.foo, nil);
+
+		});
+
+		it('isn\'t magic in computed property setter', fn :{
+
+			var p = { foo: 1 },
+				o = { };
+
+			o['__proto__'] = p;
+			assert.equal(o.foo, nil);
+
+		});
+
+		it('isn\'t magic for mixin operator', fn :{
+
+			var p = { foo: 1 },
+				o = { } := { '__proto__': 1 };
+
+			assert.equal(o.foo, nil);
+
+		});
+
+		it('isn\'t magic in own non-computed property setter', fn :{
+
+			var p = { foo: 1},
+				o = { };
+
+			o#__proto__ = p;
+			assert.equal(o.foo, nil);
+
+		});
+
+		it('isn\'t magic in own computed property setter', fn :{
+
+			var p = { foo: 1 },
+				o = { };
+
+			o#['__proto__'] = p;
+			assert.equal(o.foo, nil);
+
+		});
+
+		it('works in non-computed property getter', fn :{
+
+			var p = { foo: 1 },
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			assert.equal(o1.__proto__, p);
+			assert.equal(o2.__proto__, p);
+			assert.equal(o3.__proto__, p);
+			assert.equal(o4.__proto__, p);
+
+		});
+
+		it('works in computed property getter', fn :{
+
+			var p = { foo: 1 },
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			assert.equal(o1['__proto__'], p);
+			assert.equal(o2['__proto__'], p);
+			assert.equal(o3['__proto__'], p);
+			assert.equal(o4['__proto__'], p);
+
+		});
+
+		it('works in own non-computed property getter', fn :{
+
+			var p = { foo: 1 },
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			assert.equal(o1#__proto__, p);
+			assert.equal(o2#__proto__, p);
+			assert.equal(o3#__proto__, p);
+			assert.equal(o4#__proto__, p);
+
+		});
+
+		it('works in own computed property getter', fn :{
+
+			var p = { foo: 1 },
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			assert.equal(o1#['__proto__'], p);
+			assert.equal(o2#['__proto__'], p);
+			assert.equal(o3#['__proto__'], p);
+			assert.equal(o4#['__proto__'], p);
+
+		});
+
+		it('works in non-computed method call', fn :{
+
+			var p = fn : 1,
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			assert.equal(o1.__proto__(), 1);
+			assert.equal(o2.__proto__(), 1);
+			assert.equal(o3.__proto__(), 1);
+			assert.equal(o4.__proto__(), 1);
+
+		});
+
+		it('works in computed method call', fn :{
+
+			var p = fn : 1,
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			assert.equal(o1['__proto__'](), 1);
+			assert.equal(o2['__proto__'](), 1);
+			assert.equal(o3['__proto__'](), 1);
+			assert.equal(o4['__proto__'](), 1);
+
+		});
+
+		it('works in own non-computed method call', fn :{
+
+			var p = fn : 1,
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			assert.equal(o1#__proto__(), 1);
+			assert.equal(o2#__proto__(), 1);
+			assert.equal(o3#__proto__(), 1);
+			assert.equal(o4#__proto__(), 1);
+
+		});
+
+		it('works in own computed method call', fn :{
+
+			var p = fn : 1,
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			assert.equal(o1#['__proto__'](), 1);
+			assert.equal(o2#['__proto__'](), 1);
+			assert.equal(o3#['__proto__'](), 1);
+			assert.equal(o4#['__proto__'](), 1);
+
+		});
+
+		it('works with non-computed delete', fn :{
+
+			var p = { foo: 1 },
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			delete o1.__proto__;
+			delete o2.__proto__;
+			delete o3.__proto__;
+			delete o4.__proto__;
+
+			assert.equal(o1.__proto__, nil);
+			assert.equal(o2.__proto__, nil);
+			assert.equal(o3.__proto__, nil);
+			assert.equal(o4.__proto__, nil);
+			assert.equal(o1['__proto__'], nil);
+			assert.equal(o2['__proto__'], nil);
+			assert.equal(o3['__proto__'], nil);
+			assert.equal(o4['__proto__'], nil);
+
+		});
+
+		it('works with computed delete', fn :{
+
+			var p = { foo: 1 },
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			delete o1['__proto__'];
+			delete o2['__proto__'];
+			delete o3['__proto__'];
+			delete o4['__proto__'];
+
+			assert.equal(o1.__proto__, nil);
+			assert.equal(o2.__proto__, nil);
+			assert.equal(o3.__proto__, nil);
+			assert.equal(o4.__proto__, nil);
+			assert.equal(o1['__proto__'], nil);
+			assert.equal(o2['__proto__'], nil);
+			assert.equal(o3['__proto__'], nil);
+			assert.equal(o4['__proto__'], nil);
+
+		});
+
+		it('works with own non-computed delete', fn :{
+
+			var p = { foo: 1 },
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			delete o1#__proto__;
+			delete o2#__proto__;
+			delete o3#__proto__;
+			delete o4#__proto__;
+
+			assert.equal(o1.__proto__, nil);
+			assert.equal(o2.__proto__, nil);
+			assert.equal(o3.__proto__, nil);
+			assert.equal(o4.__proto__, nil);
+			assert.equal(o1['__proto__'], nil);
+			assert.equal(o2['__proto__'], nil);
+			assert.equal(o3['__proto__'], nil);
+			assert.equal(o4['__proto__'], nil);
+
+		});
+
+		it('works with own computed delete', fn :{
+
+			var p = { foo: 1 },
+				o1 = { __proto__: p },
+				o2 = { },
+				o3 = { },
+				o4 = { } := { __proto__: p };
+			o2.__proto__ = p;
+			o3['__proto__'] = p;
+
+			delete o1#['__proto__'];
+			delete o2#['__proto__'];
+			delete o3#['__proto__'];
+			delete o4#['__proto__'];
+
+			assert.equal(o1.__proto__, nil);
+			assert.equal(o2.__proto__, nil);
+			assert.equal(o3.__proto__, nil);
+			assert.equal(o4.__proto__, nil);
+			assert.equal(o1['__proto__'], nil);
+			assert.equal(o2['__proto__'], nil);
+			assert.equal(o3['__proto__'], nil);
+			assert.equal(o4['__proto__'], nil);
+
+		});
+
+	});
+
+});

@@ -101,7 +101,14 @@ function CallMethod(obj, key, args) {
 }
 
 function CallOwnMethod(obj, key, args) {
-	return Call(GetOwn(obj, key), obj, args);
+	var F = GetOwn(obj, key);
+	if (!IsCallable(F)) {
+		if (typeof key == 'string')
+			throw new TypeError('Method expected: ' + key);
+		else
+			throw new TypeError('Method expected');
+	}
+	return Call(F, obj, args);
 }
 
 function Bind(obj, receiver) {

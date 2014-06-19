@@ -15,7 +15,7 @@ fn assert(t, m) :{
 	return _assert(t, m);
 }
 
-assert = assert := _assert;
+assert = assert := #_assert;
 delete assert.strictEqual;
 
 assert.equal = fn(a, b, m) :{

@@ -10,6 +10,8 @@ var Object = global.Object,
 	setTimeout = global.setTimeout,
 	setInterval = global.setInterval,
 
+	ObjectPrototype = Object.prototype,
+
 	lazyBind = Function.prototype.bind.bind(Function.prototype.call),
 	lazyTie = Function.prototype.bind.bind(Function.prototype.apply),
 

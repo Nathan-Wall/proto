@@ -259,9 +259,9 @@ function Has(obj, key) {
 				'Object cannot be used as a property key in has operation'
 			);
 	}
-	K = ToString(key);
+	K = toSafeKey(key);
 	return (K in obj.Value
-		|| hasOwn(obj, 'Static') && hasOwn(obj.Static, key));
+		|| hasOwn(obj, 'Static') && hasOwn(obj.Static, K));
 }
 
 function HasOwn(obj, key) {
@@ -278,9 +278,9 @@ function HasOwn(obj, key) {
 				'Object cannot be used as a property key in has operation'
 			);
 	}
-	K = ToString(key);
+	K = toSafeKey(key);
 	return (hasOwn(obj.Value, K)
-		|| hasOwn(obj, 'Static') && hasOwn(obj.Static, key));
+		|| hasOwn(obj, 'Static') && hasOwn(obj.Static, K));
 }
 
 // TODO: Uses of `someObj.Value.someKey` in other functions should probably
@@ -301,7 +301,7 @@ function Get(obj, key, receiver) {
 				'Object cannot be used as a property key in get operation'
 			);
 	}
-	K = ToString(key);
+	K = toSafeKey(key);
 	// TODO: Make operations like `'string'.length` more performant, without
 	// having to create a new string object each time.
 	T = typeof obj;
@@ -351,7 +351,8 @@ function Get(obj, key, receiver) {
 	}
 	if (receiver === undefined)
 		receiver = obj;
-	desc = GetDescriptor(proto, K);
+	// `GetDescriptor` expects the raw key
+	desc = GetDescriptor(proto, key);
 	if (desc === undefined || desc.Value.static)
 		return undefined;
 	else if (hasOwn(desc.Value, 'value'))
@@ -374,9 +375,11 @@ function GetOwn(obj, key, receiver) {
 				'Object cannot be used as a property key in get operation'
 			);
 	}
-	K = ToString(key);
+	K = toSafeKey(key);
 	if (hasOwn(obj.Value, K) || hasOwn(obj, 'Static') && hasOwn(obj.Static, K))
-		return Get(obj, K, receiver);
+		// `K` was made safe, so we need to pass `key` in to `Get` (since
+		// `Get` expects the raw key.)
+		return Get(obj, key, receiver);
 	return undefined;
 }
 
@@ -400,7 +403,7 @@ function Set(obj, key, value, receiver) {
 				'Object cannot be used as a property key in set operation'
 			);
 	}
-	K = ToString(key);
+	K = toSafeKey(key);
 	if (hasOwn(obj, 'Static') && hasOwn(obj.Static, K))
 		O = obj.Static;
 	else
@@ -447,7 +450,7 @@ function Set(obj, key, value, receiver) {
 	else
 		throw new TypeError(
 			'Object has a getter without a setter for property "'
-			+ K + '"'
+			+ key + '"'
 		);
 }
 
@@ -468,10 +471,11 @@ function SetOwn(obj, key, value, receiver) {
 				'Object cannot be used as a property key in set operation'
 			);
 	}
-	K = ToString(key);
+	K = toSafeKey(key);
 	if (!(K in obj.Value) || hasOwn(obj.Value, K)
 	|| hasOwn(obj, 'Static') && hasOwn(obj.Static, K)) {
-		Set(obj, K, value, receiver);
+		// `Set` expects the raw key
+		Set(obj, key, value, receiver);
 		return value;
 	}
 	// TODO: Make Reflect.define capable of defining static properties
@@ -502,7 +506,7 @@ function Delete(obj, key) {
 				+ 'operation'
 			);
 	}
-	K = ToString(key);
+	K = toSafeKey(key);
 	if (hasOwn(obj, 'Static') && hasOwn(obj.Static, K))
 		O = obj.Static;
 	else
@@ -566,7 +570,7 @@ function GetDescriptor(obj, key) {
 		else
 			return undefined;
 	} else {
-		key = ToString(key);
+		key = toSafeKey(key);
 		if (hasOwn(obj, 'Static') && hasOwn(obj.Static, key)) {
 			isStatic = true;
 			O = obj.Static;
@@ -595,9 +599,10 @@ function GetDescriptor(obj, key) {
 
 function GetOwnDescriptor(obj, key) {
 	ExpectObject(obj);
-	key = ToString(key);
-	if (hasOwn(obj.Value, key)
-	|| hasOwn(obj, 'Static') && hasOwn(obj.Static, key))
+	var K = toSafeKey(key);
+	if (hasOwn(obj.Value, K)
+	|| hasOwn(obj, 'Static') && hasOwn(obj.Static, K))
+		// `GetDescriptor` expects the raw key
 		return GetDescriptor(obj, key);
 	return undefined;
 }
@@ -658,8 +663,25 @@ function concatUncommonNames(from, compareWith) {
 	if (!isObject(from)
 		|| from === compareWith
 		|| isPrototypeOf(from, compareWith)) return [ ];
-	return concat(getOwnPropertyNames(from),
+	return concat(safeGetOwnPropertyNames(from),
 		concatUncommonNames(getPrototypeOf(from), compareWith));
+}
+
+// Like `getOwnPropertyNames` but will leave out magical properties such
+// as `__proto__` when `Object.prototype` is passed in.
+function safeGetOwnPropertyNames(from) {
+	var names = getOwnPropertyNames(from),
+		tmp, i, name;
+	if (from === ObjectPrototype) {
+		tmp = createSack();
+		for (i = 0; i < names.length; i++) {
+			name = names[i];
+			if (!/^__/.test(name))
+				push(tmp, name);
+		}
+		names = slice(tmp);
+	}
+	return names;
 }
 
 function Like(obj) {
@@ -765,6 +787,7 @@ function Define(obj, kind, key, value, isStatic, writable, configurable) {
 		key = key.SymbolId;
 	else if (typeof key != 'string')
 		throw new TypeError('Expected string or symbol');
+	key = toSafeKey(key);
 	if (kind == 'value') {
 		desc.value = value;
 		desc.writable = ToBoolean(writable);
@@ -822,4 +845,12 @@ function getPropertyDescriptor(obj, key) {
 		desc = getOwnPropertyDescriptor(obj, K);
 	} while (desc === undefined && (obj = getPrototypeOf(obj)));
 	return desc;
+}
+
+function toSafeKey(key) {
+	// Dunders have long been used for various kinds of magical properties in
+	// JS implementations.
+	if (/^__/.test(key))
+		return ':' + key;
+	return key;
 }
