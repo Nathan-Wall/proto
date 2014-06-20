@@ -1,0 +1,16 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('JS Magic Properties', fn :{
+
+	<%-
+		[
+			'__proto__', '__defineGetter__', '__defineSetter__',
+			'__lookupGetter__', '__lookupSetter__', '__noSuchMethod__'
+		].map(function(property) {
+			return partial('js-magic-generic.pr.pejs', {
+				property: property
+			});
+		}).join('\n\n')
+	%>
+
+});
