@@ -172,14 +172,6 @@ function IsPrimitiveWrapper(value) {
 	return IsWrapper(value) && !!value.Primitive;
 }
 
-function ToComparable(value) {
-	if (!IsWrapper(value))
-		return value;
-	if (Has(value, $$toComparable))
-		return Call(Get(value, $$toComparable), value);
-	throw new TypeError('Value is not comparable');
-}
-
 function Is(a, b) {
 	if (a === 0 && b === 0)
 		return 1 / a === 1 / b;
