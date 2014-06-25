@@ -1,0 +1,25 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('Nil-Coalescing Operator', fn :{
+
+	it('chooses the first non-nil value', fn :{
+
+		var a = nil,
+			b,
+			c = foo(),
+			d = 5,
+			e = 6,
+			f = 7;
+
+		fn foo :{ }
+
+		assert.equal(a ?? b ?? c ?? d ?? e ?? f, 5);
+
+	});
+
+	it('chooses falsey values', fn :{
+		for falsey of [ 0, '', false, NaN ]:
+			assert.equal(nil ?? value ?? 5, value);
+	});
+
+});
