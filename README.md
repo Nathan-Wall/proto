@@ -19,7 +19,6 @@ Proto supports the following features.  Some of the features are expected to be 
 + Rest Operator
 + Spread Operator
 + Parameter Defaults
-+ Promises
 + Symbols
 + `Map`, `Set`, `WeakMap`, `WeakSet`
 + Modules
