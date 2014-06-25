@@ -15,12 +15,21 @@ Proto supports the following features.  Some of the features are expected to be 
 ### ECMAScript 6
 
 + Destructuring
++ Default Parameters
 + Rest Operator
 + Spread Operator
 + Parameter Defaults
++ Promises
++ Symbols
++ `Map`, `Set`, `WeakMap`, `WeakSet`
 + Modules
 + [Generators](docs/functions/generators.md)
 + [Promises](docs/functions/async/promises.md)
++ Comprehensions
++ Block Scoping
++ `const`
++ `for`..`of`
++ Reflection API
 + `0b0101` and `0o12537` syntax for binary and octal numeric literals
 
 ### ECMAScript 7 (expected)
@@ -30,9 +39,12 @@ Proto supports the following features.  Some of the features are expected to be 
 ### Other
 
 + Coercives
++ Slots
++ Syntax for symbols (`@name`)
 + Statements as expressions
 + Nil-Coalescing Operator (`??`)
 + Conditional Properties (`?`)
++ Mixin Operator (`:=`)
 
 ## Use
 
