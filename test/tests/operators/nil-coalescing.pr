@@ -19,7 +19,7 @@ describe('Nil-Coalescing Operator', fn :{
 
 	it('chooses falsey values', fn :{
 		for falsey of [ 0, '', false, NaN ]:
-			assert.equal(nil ?? value ?? 5, value);
+			assert.is(nil ?? falsey ?? 5, falsey);
 	});
 
 });

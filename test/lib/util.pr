@@ -18,6 +18,12 @@ fn assert(t, m) :{
 assert = assert := #_assert;
 delete assert.strictEqual;
 
+assert.is = fn(a, b, m) :{
+	return assert(a is b,
+		m ?? 'Expected ' & JSON.stringify(a) & ' to be ' & JSON.stringify(b)
+	);	
+};
+
 assert.equal = fn(a, b, m) :{
 	return assert(a == b,
 		m ?? 'Expected ' & JSON.stringify(a) & ' to equal ' & JSON.stringify(b)
