@@ -13,13 +13,30 @@ describe('Nil-Coalescing Operator', fn :{
 
 		fn foo :{ }
 
-		assert.equal(a ?? b ?? c ?? d ?? e ?? f, 5);
+		assert.is(a ?? b ?? c ?? d ?? e ?? f, 5);
 
 	});
 
 	it('chooses falsey values', fn :{
 		for falsey of [ 0, '', false, NaN ]:
 			assert.is(nil ?? falsey ?? 5, falsey);
+	});
+
+	it('chooses the first non-nil when a statement expression is used as a value', fn :{
+		var foo;
+		assert.is(
+			nil
+			?? foo
+			?? :{ }
+			?? :{ 1; 2; nil; }
+			?? switch foo :{ case 1: 5; }
+			?? switch foo :{ case nil: 22; }
+			?? :{ 3; }
+			?? nil
+			?? :{ 5; 6; }
+			?? switch foo :{ case nil: 33; },
+			22
+		);
 	});
 
 });

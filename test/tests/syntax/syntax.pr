@@ -2,3 +2,4 @@ import 'block-expressions.pr';
 import 'cascade.pr';
 import 'array-initializers.pr';
 import 'array-comprehensions.pr';
+import 'switch.pr';

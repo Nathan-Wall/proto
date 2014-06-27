@@ -1,0 +1,83 @@
+import { describe, it, assert } from '../../lib/util.pr';
+// Note that whether `null` and `undefined` are actually imported as their
+// native JS values is irrelevant for these test cases. We're just trying to
+// throw as many kinks into the system as possible.
+import { null, undefined } from '@env';
+
+describe('switch', fn :{
+
+	it('considers an uninitialized variable to be nil', fn :{
+		var foo;
+		switch foo :{
+			case nil:
+			default:
+				throw new Error('Chose default case'); 
+		}
+	});
+
+	it('considers an uninitialized variable to be nil (in expression)', fn :{
+		var foo;
+		assert(switch foo :{
+			case nil: true;
+		});
+	});
+
+	it('considers nil to be an uninitialized variable', fn :{
+		var foo;
+		switch nil :{
+			case foo:
+			default:
+				throw new Error('Chose default case');
+		}
+	});
+
+	it('considers nil to be an uninitialized variable (in expression)', fn :{
+		var foo;
+		assert(switch nil :{
+			case foo: true;
+		});
+	});
+
+	it('considers JS null to be JS undefined', fn :{
+		switch null :{
+			case undefined:
+			default:
+				throw new Error('Chose default case'); 
+		}
+	});
+
+	it('considers JS null to be JS undefined (in expression)', fn :{
+		assert(switch null :{
+			case undefined: true;
+		});
+	});
+
+	it('considers JS undefined to be JS null', fn :{
+		switch undefined :{
+			case null:
+			default:
+				throw new Error('Chose default case');
+		}
+	});
+
+	it('considers JS undefined to be JS null (in expression)', fn :{
+		assert(switch undefined :{
+			case null: true;
+		});
+	});
+
+	it('considers NaN to not be NaN', fn :{
+		switch NaN :{
+			case NaN:
+				throw new Error('Chose NaN case');
+		}
+	});
+
+	it('considers NaN to not be NaN (in expression)', fn :{
+		assert(switch NaN :{
+			case NaN: false;
+			default: true;
+		});
+	});
+
+});
