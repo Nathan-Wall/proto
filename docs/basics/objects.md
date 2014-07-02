@@ -17,7 +17,7 @@ Getters and setters can be declared using this syntax with the keywords `get` an
 	var Person = {
 
 		// A method
-		init(name) :{
+		init: fn(name) :{
 			this.name = name;
 		},
 
@@ -55,7 +55,7 @@ Symbols can be used as property names in object literal syntax.
 	sym @noise;
 	var Animal = {
 		@noise: nil,
-		speak :{
+		speak: fn :{
 			return this.@noise;
 		}
 	};
