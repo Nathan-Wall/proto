@@ -12,7 +12,7 @@ Objects can be created using an object literal syntax which is very similar to J
 
 ### Getters and Setters
 
-Getters and setters can be declared using this syntax with the keywords `get` and `set` followed by a space.  A succinct method syntax is also possible (see the `init` method below).
+Getters and setters can be declared using this syntax with the keywords `get` and `set` followed by a space.
 
 	var Person = {
 
