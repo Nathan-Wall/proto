@@ -57,16 +57,6 @@ console.log(kip.name);      // 'Kip Wheeler'
 Symbols can be used as property names in object literal syntax.
 
 ```pr
-sym @name;
-var bill = { @name: 'Bill' };
-var steve = { @name: 'Steve' };
-console.log(bill.@name);  // 'Bill'
-console.log(steve.@name); // 'Steve'
-```
-
-Please note, however, that the mixin operator (:=) does not include symbols.
-
-```pr
 sym @noise;
 var Animal = {
 	speak: fn : this.@noise
@@ -74,24 +64,6 @@ var Animal = {
 
 var Duck = like Animal := {
 	@noise: 'Quack!'
-};
-
-var roger = new Duck();
-console.log(roger.speak()); // '[nil]'
-```
-
-So using an `init` function to set up private data is recommended:
-
-```pr
-sym @noise;
-var Animal = {
-	speak: fn : this.@noise
-};
-
-var Duck = like Animal := {
-	init: fn :{
-		this.@noise = 'Quack!';
-	}
 };
 
 var roger = new Duck();
