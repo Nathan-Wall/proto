@@ -40,10 +40,18 @@ Proto supports the following features.  Some of the features are expected to be 
 + Coercives
 + Slots
 + Syntax for symbols (`@name`)
++ Symbols are private
 + Statements as expressions
++ Ranges (`..`, `...`, `by`)
++ Inheritance Operator (`like`)
 + Nil-Coalescing Operator (`??`)
 + Conditional Properties (`?`)
 + Mixin Operator (`:=`)
++ Concatenation Operator (`&`)
++ Same Value Operator (`is`)
++ Generic Negation Operators (`!in`, `!is`, `!like`)
++ Switch statements that don't default to fall-through
++ Much more
 
 ## Use
 
