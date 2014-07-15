@@ -6,21 +6,10 @@ var StringProto = CreatePrototype({
 			value = '';
 		else
 			value = ToString(value);
-		for (var i = 0; i < value.length; i++) {
-			define(this.Value, i, {
-				value: value[i],
-				enumerable: true,
-				writable: false,
-				configurable: false
-			});
-		}
-		define(this.Value, 'length', {
-			value: value.length,
-			enumerable: false,
-			writable: false,
-			configurable: false
-		});
-		this.StringValue = value;
+		for (var i = 0; i < value.length; i++)
+			Define(this, 'value', i, value[i], false, false, false);
+		Define(this, 'value', 'length', false, false, false);
+		Set(this, $$stringValue, value);
 	},
 
 	lower: function() {
@@ -59,21 +48,22 @@ var StringProto = CreatePrototype({
 // TODO: Is this used?  Should it be used? I think there should instead be
 // a StringInit function.
 function CreateString(proto, value) {
-	var v = ToString(value);
+	var v, obj;
+	v = ToString(value);
 	if (proto === undefined)
 		proto = StringProto;
-	var obj = CreateObject(proto);
-	obj.StringValue = v;
+	obj = CreateObject(proto);
+	Set(obj, $$stringValue, v);
 	return obj;
 }
 
 function ToString(value) {
 	var v;
 	if (IsWrapper(value)) {
-		if ('ToString' in value)
-			return String(Call(value.ToString, value, [ ]));
-		if ('StringValue' in value)
-			return String(value.StringValue);
+		if (Has(value, $$toString))
+			return String(CallMethod(value, $$toString));
+		if (Has(value, $$stringValue))
+			return String(Get(value, $$stringValue));
 		if ('ProxyJs' in value)
 			return String(value.Value);
 		if (IsObject(value))

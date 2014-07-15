@@ -1,7 +1,7 @@
 // This implementation is very closely based on the 2014-05-22 ES6 draft for
 // WeakMap.
 
-var curWeakMapId = createSack([ MIN_PRECISION ]);
+var weakMapIds = new Identifiers();
 
 var WeakMapProto = CreatePrototype({
 
@@ -31,22 +31,6 @@ var WeakMapProto = CreatePrototype({
 
 });
 
-// This should be called without the `index` argument. That argument is used
-// for recursion.
-function nextWeakMapId(index) {
-	if (index === undefined)
-		index = 0;
-	curWeakMapId[index]++;
-	if (curWeakMapId[index] > MAX_PRECISION) {
-		curWeakMapId[index] = MIN_PRECISION;
-		if (curWeakMapId.length == index + 1)
-			push(curWeakMapId, MIN_PRECISION);
-		else
-			nextWeakMapId(index + 1);
-	}
-	return join(curWeakMapId, '.');
-}
-
 function ExpectWeakMap(M) {
 	if (!IsWeakMap(M))
 		throw new TypeError('WeakMap expected');
@@ -58,23 +42,23 @@ function WeakMapInit(map, iterable) {
 	var iter, adder, next, nextValue, k, v;
 
 	ExpectObject(map);
-	if (hasOwn(map, 'WeakMapId'))
+	if (HasOwn(map, $$weakMapId))
 		throw new TypeError('WeakMap has already been initialized');
 
 	// Setting to 'initializing' temporarily in case side effects from the
 	// steps below try to initialize the map again.
-	map.WeakMapId = 'initializing';
+	Set(map, $$weakMapId, 'initializing');
 
 	if (iterable != null) {
 		iter = GetIterator(iterable);
-		adder = Get(map, "set");
+		adder = Get(map, 'set');
 		if (!IsCallable(adder)) {
-			delete map.WeakMapId;
+			Delete(map, $$weakMapId);
 			throw new TypeError('Expected `set` method on WeakMap object');
 		}
 	}
 
-	map.WeakMapId = nextWeakMapId();
+	Set(map, $$weakMapId, weakMapIds.next());
 
 	if (iter === undefined)
 		return;
@@ -93,40 +77,41 @@ function IsWeakMap(map) {
 	var wmId;
 	if (!IsObject(map))
 		return false;
-	wmId = map.WeakMapId;
+	wmId = Get(map, $$weakMapId);
 	return wmId !== undefined && wmId !== 'initializing';
 }
 
 function ClearWeakMap(M) {
 	ExpectWeakMap(M);
-	while (!hasOwn(M, 'WeakMapId'))
+	while (!HasOwn(M, $$weakMapId))
 		M = getPrototype(M);
-	M.WeakMapId = nextWeakMapId();
+	Set(M, $weakMapId, weakMapIds.next());
 }
 
 function WeakMapDelete(M, key) {
-	var wmId;
+	var wmId, wmValue;
 	ExpectWeakMap(M);
-	if (!IsObject(key) || !hasOwn(key, 'WeakMapValue'))
+	if (!IsObject(key) || !HasOwn(key, $$weakMapValue))
 		return false;
-	wmId = M.WeakMapId;
-	if (!(wmId in key.WeakMapValue))
+	wmId = Get(M, $$weakMapId);
+	wmValue = Get(key, $$weakMapValue);
+	if (!(wmId in wmValue))
 		return false;
-	return delete key.WeakMapValue[wmId];
+	return delete wmValue[wmId];
 }
 
 function WeakMapGet(M, key) {
 	ExpectWeakMap(M);
-	if (!IsObject(key) || !hasOwn(key, 'WeakMapValue'))
+	if (!IsObject(key) || !HasOwn(key, $$weakMapValue))
 		return undefined;
-	return key.WeakMapValue[M.WeakMapId];
+	return Get(key, $$weakMapValue)[Get(M, $$weakMapId)];
 }
 
 function WeakMapHas(M, key) {
 	ExpectWeakMap(M);
-	if (!IsObject(key) || !hasOwn(key, 'WeakMapValue'))
+	if (!IsObject(key) || !HasOwn(key, $$weakMapValue))
 		return false;
-	return M.WeakMapId in key.WeakMapValue;
+	return Get(M, $$weakMapId) in Get(key, $$weakMapValue);
 }
 
 function WeakMapSet(M, key, value) {
@@ -134,8 +119,8 @@ function WeakMapSet(M, key, value) {
 	ExpectWeakMap(this);
 	if (!IsObject(key))
 		throw new TypeError('WeakMap keys must be an objects');
-	wmKey = key.WeakMapValue;
+	wmKey = Get(key, $$weakMapValue);
 	if (wmKey === undefined)
-		wmKey = key.WeakMapValue = create(null);
-	return wmKey[M.WeakMapId] = value;
+		wmKey = Set(key, $$weakMapValue, create(null));
+	return wmKey[Get(M, $$weakMapId)] = value;
 }

@@ -12,18 +12,18 @@ var SetProto = CreatePrototype({
 
 	add: function add(value) {
 		var S = ExpectSet(this);
-		MapSet(S.SetMap, value, true);
+		MapSet(Get(S, $$setMap), value, true);
 		return value;
 	},
 
 	clear: function clear() {
 		var S = ExpectSet(this);
-		ClearMap(S.SetMap);
+		ClearMap(Get(S, $$setMap));
 	},
 
 	delete: function delete_(value) {
 		var S = ExpectSet(this);
-		return MapDelete(S.SetMap, value);
+		return MapDelete(Get(S, $$setMap), value);
 	},
 
 	entries: function entries() {
@@ -35,7 +35,7 @@ var SetProto = CreatePrototype({
 
 	has: function has(value) {
 		var S = ExpectSet(this);
-		return MapHas(S.SetMap, value);
+		return MapHas(Get(S, $$setMap), value);
 	},
 
 	keys: function keys() {
@@ -52,7 +52,7 @@ var SetProto = CreatePrototype({
 		return CreateSetIterator(this, SET_ITER_VALUE);
 	},
 
-	'@Iterator': function iterator() {
+	'@@iterator': function iterator() {
 		return CreateSetIterator(this, MAP_ITER_VALUE);
 	}
 
@@ -63,23 +63,25 @@ function SetInit(set, iterable) {
 	var map, iter, adder, next, nextValue;
 
 	ExpectObject(set);
-	if (hasOwn(set, 'SetMap'))
+	if (HasOwn(set, $$setMap))
 		throw new TypeError('Set has already been initialized');
 
 	map = CreateObject(MapProto);
 	MapInit(map);
-	set.SetMap = 'initializing';
+	// SetOwn should be faster than Define and should be the same assuming
+	// this is a newly created object.
+	Set(set, $$setMap, 'initializing');
 
 	if (iterable != null) {
 		iter = GetIterator(iterable);
 		adder = Get(set, 'add');
 		if (!IsCallable(adder)) {
-			delete set.SetMap;
+			Delete(set, $$setMap);
 			throw new TypeError('Function expected');
 		}
 	}
 
-	set.SetMap = map;
+	Set(set, $$setMap, map);
 
 	if (iter === undefined)
 		return;
@@ -95,7 +97,7 @@ function IsSet(set) {
 	var sMap;
 	if (!IsObject(set))
 		return false;
-	sMap = map.SetMap;
+	sMap = Get(map, $$setMap);
 	return sMap !== undefined && sMap !== 'initializing';
 }
 

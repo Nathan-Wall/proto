@@ -1,6 +1,6 @@
 var BooleanProto = CreatePrototype({
 
-	'@ToComparable': function toComparable() {
+	'@@toComparable': function toComparable() {
 		return ToBoolean(this);
 	}
 
@@ -11,17 +11,17 @@ function CreateBoolean(proto, value) {
 	if (proto === undefined)
 		proto = BooleanProto;
 	var obj = CreateObject(proto);
-	obj.BooleanValue = v;
+	Set(obj, $$booleanValue, v);
 	return obj;
 }
 
 function ToBoolean(value) {
 	var v;
 	if (IsWrapper(value)) {
-		if ('ToBoolean' in value)
-			return !!Call(value.ToBoolean, value, [ ]);
-		if ('BooleanValue' in value)
-			return !!value.BooleanValue;
+		if (Has(value, $$toBoolean))
+			return !!Call(Get(value, $$toBoolean), value, [ ]);
+		if (Has(value, 'BooleanValue'))
+			return !!Get(value, $$booleanValue);
 		return true;
 	}
 	else

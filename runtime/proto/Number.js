@@ -6,10 +6,10 @@ var NumberProto = CreatePrototype({
 			value = '';
 		else
 			value = ToNumber(value);
-		this.NumberValue = value;
+		Set(thism, $$numberValue, value);
 	},
 
-	'@ToString': function(radix) {
+	'@@toString': function(radix) {
 		return numberToString(ToNumber(this), radix);
 	}
 
@@ -20,17 +20,17 @@ function CreateNumber(proto, value) {
 	if (proto === undefined)
 		proto = NumberProto;
 	var obj = CreateObject(proto);
-	obj.NumberValue = v;
+	Set(obj, $$numberValue, v);
 	return obj;
 }
 
 function ToNumber(value) {
 	var v;
 	if (IsWrapper(value)) {
-		if ('ToNumber' in value)
-			return +Call(value.ToNumber, value, [ ]);
-		if ('NumberValue' in value)
-			return +value.NumberValue;
+		if (Has(value, $$toNumber))
+			return +Call(Get(value, $$toNumber), value);
+		if (Has(value, $$numberValue))
+			return +Get(value, $$numberValue);
 		return NaN;
 	}
 	else if (value === null || value === undefined)

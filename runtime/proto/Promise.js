@@ -45,7 +45,7 @@ function GetDeferred(P) {
 	ExpectObject(P);
 	deferred = { Promise: undefined, Resolve: undefined, Reject: undefined };
 	resolver = CreateDeferredConstructionFunction();
-	resolver.Deferred = deferred;
+	Set(resolver, $$promiseDeferred, deferred);
 	promise = New(P, [ resolver ]);
 	ExpectFunction(deferred.Resolve);
 	ExpectFunction(deferred.Reject);
@@ -56,42 +56,39 @@ function GetDeferred(P) {
 function IsPromise(x) {
 	if (!IsObject(x))
 		return false;
-	if (!('PromiseStatus' in x))
-		return false;
-	if (x.PromiseStatus === undefined)
+	if (Get(x, $$promiseStatus) === undefined)
 		return false;
 	return true;
 }
 
 function MakePromiseReactionFunction(deferred, handler) {
 	var F = CreatePromiseReactionFunction();
-	F.Deferred = deferred;
-	F.Handler = handler;
+	Set(F, $$promiseDeferred, deferred);
+	Set(F, $$promiseHandler, handler);
 	return F;
 }
 
 function PromiseReject(promise, reason) {
 	var reactions;
-	if (promise.PromiseStatus != 'unresolved')
+	if (Get(promise, $$promiseStatus) != 'unresolved')
 		return;
-	reactions = promise.RejectReactions;
-	promise.Result = reason;
-	promise.ResolveReactions = undefined;
-	promise.RejectReactions = undefined;
-	promise.PromiseStatus = 'has-rejection';
+	reactions = Get(promise, $$promiseRejectReactions);
+	Set(promise, $$promiseResult, reason);
+	Set(promise, $$promiseResolveReactions, undefined);
+	Set(promise, $$promiseRejectReactions, undefined);
+	Set(promise, $$promiseStatus, 'has-rejection');
 	TriggerPromiseReactions(reactions, reason);
 }
 
 function PromiseResolve(promise, resolution) {
-	if (resolution === 523) debugger;
 	var reactions;
-	if (promise.PromiseStatus !== 'unresolved')
+	if (Get(promise, $$promiseStatus) !== 'unresolved')
 		return;
-	reactions = promise.ResolveReactions;
-	promise.Result = resolution;
-	promise.ResolveReactions = undefined;
-	promise.RejectReactions = undefined;
-	promise.PromiseStatus = 'has-resolution';
+	reactions = Get(promise, $$promiseResolveReactions);
+	Set(promise, $$promiseResult, resolution);
+	Set(promise, $$promiseResolveReactions, undefined);
+	Set(promise, $$promiseRejectReactions, undefined);
+	Set(promise, $$promiseStatus, 'has-resolution');
 	TriggerPromiseReactions(reactions, resolution);
 }
 
@@ -106,7 +103,7 @@ function TriggerPromiseReactions(reactions, argument) {
 
 function CreateDeferredConstructionFunction() {
 	var F = CreateFunction(null, function(resolve, reject) {
-		var deferred = F.Deferred;
+		var deferred = Get(F, $$promiseDeferred);
 		deferred.Resolve = resolve;
 		deferred.Reject = reject;
 	});
@@ -115,10 +112,10 @@ function CreateDeferredConstructionFunction() {
 
 function CreatePromiseAllCountdownFunction() {
 	var F = CreateFunction(null, function(x) {
-		var index = F.Index,
-			values = F.Values,
-			deferred = F.Deferred,
-			countdownHolder = F.CountdownHolder;
+		var index = Get(F, $$promiseIndex),
+			values = Get(F, $$promiseValues),
+			deferred = Get(F, $$promiseDeferred),
+			countdownHolder = Get(F, $$promiseCountdownHolder);
 		values[index] = x;
 		if (values.length < index + 1)
 			values.length = index + 1;
@@ -133,8 +130,8 @@ function CreatePromiseAllCountdownFunction() {
 
 function CreatePromiseReactionFunction() {
 	var F = CreateFunction(null, function(x) {
-		var deferred = F.Deferred,
-			handler = F.Handler,
+		var deferred = Get(F, $$promiseDeferred),
+			handler = Get(F, $$promiseHandler),
 			handlerResult,
 			then;
 		try { handlerResult = Call(handler, undefined, [ x ]); }
@@ -160,8 +157,8 @@ function CreatePromiseReactionFunction() {
 
 function CreatePromiseResolutionHandlerFunction() {
 	var F = CreateFunction(null, function(x) {
-		var fulfillmentHandler = F.FulfillmentHandler,
-			rejectionHandler = F.RejectionHandler;
+		var fulfillmentHandler = Get(F, $$promiseFulfillmentHandler),
+			rejectionHandler = Get(F, $$promiseRejectionHandler);
 		if (IsPromise(x))
 			return PromiseThen(x, fulfillmentHandler, rejectionHandler);
 		return Call(fulfillmentHandler, undefined, [ x ]);
@@ -171,7 +168,7 @@ function CreatePromiseResolutionHandlerFunction() {
 
 function CreateRejectPromiseFunction() {
 	var F = CreateFunction(null, function(reason) {
-		var promise = F.Promise;
+		var promise = Get(F, $$promise);
 		return PromiseReject(promise, reason);
 	});
 	return F;
@@ -179,7 +176,7 @@ function CreateRejectPromiseFunction() {
 
 function CreateResolvePromiseFunction() {
 	var F = CreateFunction(null, function(resolution) {
-		var promise = F.Promise;
+		var promise = Get(F, $$promise);
 		return PromiseResolve(promise, resolution);
 	});
 	return F;
@@ -187,15 +184,13 @@ function CreateResolvePromiseFunction() {
 
 function PromiseInit(promise, resolver) {
 	var resolve, reject;
-	promise.PromiseStatus = 'unresolved';
-	promise.ResolveReactions = create(null);
-	promise.ResolveReactions.length = 0;
-	promise.RejectReactions = create(null);
-	promise.RejectReactions.length = 0;
+	Set(promise, $$promiseStatus, 'unresolved');
+	Set(promise, $$promiseResolveReactions, createSack());
+	Set(promise, $$promiseRejectReactions, createSack());
 	resolve = CreateResolvePromiseFunction();
-	resolve.Promise = promise;
+	Set(resolve, $$promise, promise);
 	reject = CreateRejectPromiseFunction();
-	reject.Promise = promise;
+	Set(reject, $$promise, promise);
 	try { Call(resolver, undefined, [ resolve, reject ]); }
 	catch (e) { PromiseReject(promise, proxyJs(e)); }
 }
@@ -209,8 +204,7 @@ function PromiseAll(proto, iterable) {
 		PromiseReject(deferred.Promise, proxyJs(e));
 		return deferred.Promise;
 	}
-	values = create(null);
-	values.length = 0;
+	values = createSack();
 	countdownHolder = { Countdown: 0 };
 	index = 0;
 	while (true) {
@@ -237,10 +231,10 @@ function PromiseAll(proto, iterable) {
 			return deferred.Promise;
 		}
 		countdownFunction = CreatePromiseAllCountdownFunction();
-		countdownFunction.Index = index;
-		countdownFunction.Values = values;
-		countdownFunction.Deferred = deferred;
-		countdownFunction.CountdownHolder = countdownHolder;
+		Set(countdownFunction, $$promiseIndex, index);
+		Set(countdownFunction, $$promiseValues, values);
+		Set(countdownFunction, $$promiseDeferred, deferred);
+		Set(countdownFunction, $$promiseCountdownHolder, countdownHolder);
 		try {
 			result = PromiseThen(
 				nextPromise, countdownFunction, deferred.Reject
@@ -263,7 +257,8 @@ function PromiseThen(promise, onFulfilled, onRejected) {
 		fulfillmentHandler,
 		resolutionHandler,
 		resolveReaction,
-		rejectReaction;
+		rejectReaction,
+		status;
 	rejectionHandler = deferred.Reject;
 	if (onRejected !== undefined)
 		rejectionHandler = ExpectFunction(onRejected);
@@ -271,21 +266,22 @@ function PromiseThen(promise, onFulfilled, onRejected) {
 	if (onFulfilled !== undefined)
 		fulfillmentHandler = ExpectFunction(onFulfilled);
 	resolutionHandler = CreatePromiseResolutionHandlerFunction();
-	resolutionHandler.FulfillmentHandler = fulfillmentHandler;
-	resolutionHandler.RejectionHandler = rejectionHandler;
+	Set(resolutionHandler, $$promiseFulfillmentHandler, fulfillmentHandler);
+	Set(resolutionHandler, $$promiseRejectionHandler, rejectionHandler);
 	resolveReaction = MakePromiseReactionFunction(deferred, resolutionHandler);
 	rejectReaction = MakePromiseReactionFunction(deferred, rejectionHandler);
-	if (promise.PromiseStatus === 'unresolved') {
-		push(promise.ResolveReactions, resolveReaction);
-		push(promise.RejectReactions, rejectReaction);
+	status = Get(promise, $$promiseStatus);
+	if (status === 'unresolved') {
+		push(Get(promise, $$promiseResolveReactions), resolveReaction);
+		push(Get(promise, $$promiseRejectReactions), rejectReaction);
 	}
-	else if (promise.PromiseStatus === 'has-resolution')
+	else if (status === 'has-resolution')
 		QueueMicrotask(function() {
-			Call(resolveReaction, undefined, [ promise.Result ]);
+			Call(resolveReaction, undefined, [ Get(promise, $$promiseResult) ]);
 		});
-	else if (promise.PromiseStatus === 'has-rejection')
+	else if (status === 'has-rejection')
 		QueueMicrotask(function() {
-			Call(rejectReaction, undefined, [ promise.Result ]);
+			Call(rejectReaction, undefined, [ Get(promise, $$promiseResult) ]);
 		});
 	return deferred.Promise;
 }

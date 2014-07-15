@@ -1,0 +1,11 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('Mixin Operator', fn :{
+
+	it('mixes in symbols', fn :{
+		sym @foo;
+		var a = { } := { @foo: 'bar' };
+		assert.equal(a.@foo, 'bar');
+	});
+
+});

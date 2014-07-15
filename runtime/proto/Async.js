@@ -9,8 +9,8 @@ function CreateAsyncFunction(proto, progeneratedFn, name, arity, receiver) {
 			promise = Like(PromiseProto);
 		PromiseInit(promise,
 			CreateFunction(undefined, function(resolve, reject) {
-				gen.AsyncResolve = resolve;
-				gen.AsyncReject = reject;
+				Set(gen, $$asyncResolve, resolve);
+				Set(gen, $$asyncReject, reject);
 			})
 		);
 		QueueMicrotask(function() {
@@ -25,7 +25,7 @@ function AsyncNext(gen, send) {
 		AsyncHandleResult(gen, GeneratorNext(gen, send));
 	}
 	catch (x) {
-		Call(gen.AsyncReject, undefined, [ proxyJs(x) ]);
+		Call(Get(gen, $$asyncReject), undefined, [ proxyJs(x) ]);
 		return;
 	}
 }
@@ -35,16 +35,16 @@ function AsyncThrow(gen, exception) {
 		AsyncHandleResult(gen, GeneratorThrow(gen, exception));
 	}
 	catch (x) {
-		Call(gen.AsyncReject, undefined, [ proxyJs(x) ]);
+		Call(Get(gen, $$asyncReject), undefined, [ proxyJs(x) ]);
 		return;
 	}
 }
 
 function AsyncHandleResult(gen, result) {
-	var value = result.Value.value,
-		done = result.Value.done;
+	var value = Get(result, 'value'),
+		done = Get(result, 'done');
 	if (done) {
-		Call(gen.AsyncResolve, undefined, [ value ]);
+		Call(Get(gen, $$asyncResolve), undefined, [ value ]);
 		return;
 	}
 	if (IsPromise(value))

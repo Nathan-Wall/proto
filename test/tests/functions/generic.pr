@@ -1,4 +1,4 @@
-import { describe, it, assert } from '../../lib/util.pr';
+import { describe, it, xit, assert } from '../../lib/util.pr';
 
 fn testProps(f) :{
 
@@ -32,7 +32,7 @@ fn testProps(f) :{
 		});
 	});
 
-	it('does not permit configuring #arity', fn :{
+	xit('does not permit configuring #arity', fn :{
 		assert.throws(fn :{
 			reflect.define(f, 'arity', #{
 				value: 8

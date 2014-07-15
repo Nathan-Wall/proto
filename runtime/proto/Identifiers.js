@@ -1,66 +1,136 @@
-// TODO: Give this module integrity
-
 var Identifiers = (function() {
 
-	var ALPHANUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	var ALPHANUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
 
-	function Identifiers(chars) {
-		this._curId = [ 0 ];
+		DATA_DESC = (function() {
+			var desc = create(null);
+			desc.enumerable = false;
+			desc.writable = true;
+			desc.configurable = true;
+			return desc;
+		})();
+
+
+
+	// Interface
+
+	function Identifiers(prefixSize, chars) {
+		expectObject(this);
+		reset(this);
 		if (chars !== undefined)
 			this._chars = String(chars);
+		if (prefixSize !== undefined)
+			this._prefixSize = prefixSize | 0;
 	}
 
-	Identifiers.prototype = {
+	Identifiers.prototype = def({
 
+		_prefixSize: 0,
 		_curId: undefined,
 		_chars: ALPHANUM,
 
-		next: function next() {
-			return toIdentifierName(this._curId, this._chars);
+		reset: contextualize(reset),
+		next: contextualize(next)
+
+	});
+
+	return def(Identifiers, {
+
+		getRandomChar: function getRandomChar_(chars) {
+			return getRandomChar(chars === undefined ? ALPHANUM : String(chars));
+		},
+
+		getRandomString: function getRandomString_(length, chars) {
+			return getRandomString(
+				chars === undefined ? ALPHANUM : String(chars),
+				length
+			);
 		}
 
-	};
+	});
 
-	Identifiers.getRandomChar = function(chars) {
-		return getRandomChar(chars === undefined ? ALPHANUM : String(chars));
-	};
-	
-	Identifiers.getRandomString = function(length, chars) {
-		return getRandomString(
-			chars === undefined ? ALPHANUM : String(chars),
-			length
-		);
-	};
 
-	return Identifiers;
+
+	// Implementation
+
+	function reset(obj) {
+		obj._curId = createSack([ 0 ]);
+	}
+
+	function next(obj) {
+		return toIdentifierName(obj._curId, obj._chars, obj._prefixSize);
+	}
+
+	function toIdentifierName(r, chars, prefixSize) {
+		var id, i, L;
+		expectObject(r);
+		chars = String(chars);
+		prefixSize = prefixSize | 0;
+		id = createSack();
+		L = r.length | 0;
+		for (i = 0; i < prefixSize; i++)
+			push(id, getRandomChar(chars));
+		for (i = 0; i < L; i++)
+			push(id, chars[r[i]]);
+		i = r.length - 1;
+		r[i]++;
+		while (r[i] >= chars.length) {
+			r[i] = 0;
+			if (i > 0)
+				r[i - 1]++;
+			else
+				unshift(r, 0);
+			i--;
+		}
+		return join(id, '');
+	}
+
+	function getRandomString(chars, length) {
+		var r = [ ];
+		chars = String(chars);
+		length = length | 0;
+		for (var i = 0; i < length; i++)
+			push(r, getRandomChar(chars));
+		return join(r, '');
+	}
+
+	function getRandomChar(chars) {
+		chars = String(chars);
+		var L = chars.length;
+		return chars[floor(random() * L) % L];
+	}
+
+	function def(obj, members) {
+		var k, i, key;
+		if (members === undefined) {
+			members = obj;
+			obj = { };
+		}
+		else
+			expectObject(obj);
+		expectObject(members);
+		k = keys(members);
+		for (i = 0; i < k.length; i++) {
+			key = k[i];
+			defineProperty(obj, key,
+				dataDesc(members[key])
+			);
+		}
+		return obj;
+	}
+
+	function dataDesc(value) {
+		DATA_DESC.value = value;
+		return DATA_DESC;
+	}
+
+	function contextualize(f) {
+		var F = tie(f);
+		return function() {
+			var args = [ this ];
+			pushAll(args, arguments);
+			return F(null, args);
+		};
+	}
 
 })();
-
-function toIdentifierName(r, chars) {
-	var id = [ getRandomChar(chars) ];
-	for (var i = 0; i < r.length; i++)
-		id.push(chars.charAt(r[i]));
-	r[0]++;
-	i = 0;
-	while (r[i] >= chars.length) {
-		r[i] = 0;
-		if (i < r.length - 1)
-			r[i + 1]++;
-		else
-			r.push(0);
-		i++;
-	}
-	return id.join('');
-}
-
-function getRandomString(chars, length) {
-	var r = [ ];
-	for (var i = 0; i < length; i++)
-		r.push(getRandomChar(chars));
-	return r.join('');
-}
-
-function getRandomChar(chars) {
-	var L = chars.length;
-	return chars.charAt(Math.floor(Math.random() * L) % L);
-}

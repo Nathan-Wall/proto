@@ -10,14 +10,14 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-var GenStateSuspendedStart = 'suspendedStart',
-	GenStateSuspendedYield = 'suspendedYield',
-	GenStateExecuting = 'executing',
-	GenStateCompleted = 'completed',
+var GENSTATE_SUSPENDED_START = 'suspendedStart',
+	GENSTATE_SUSPENDED_YIELD = 'suspendedYield',
+	GENSTATE_EXECUTING = 'executing',
+	GENSTATE_COMPLETED = 'completed',
 
 	// Returning this object from the innerFn has the same effect as
 	// breaking out of the dispatch switch statement.
-	GeneratorContinue = create(null);
+	GENERATOR_CONTINUE = create(null);
 
 function CreateGeneratorFunction(proto, progeneratedFn, name, arity, receiver) {
 	// TODO: This needs some work... specifically the way the prototypes are set
@@ -29,7 +29,7 @@ function CreateGeneratorFunction(proto, progeneratedFn, name, arity, receiver) {
 	if (arguments.length < 5)
 		receiver = DYNAMIC_THIS;
 	var obj = CreateObject(proto);
-	obj.GeneratorStart = progeneratedFn;
+	Set(obj, $$generatorStart, progeneratedFn);
 	return CreateFunction(undefined, function() {
 		var iter = Like(obj);
 		GeneratorInit(iter, CreateArray(null, arguments), this);
@@ -40,77 +40,83 @@ function CreateGeneratorFunction(proto, progeneratedFn, name, arity, receiver) {
 function GeneratorInit(generator, args, receiver) {
 
 	ExpectObject(generator);
-	if (!('GeneratorStart' in generator))
+	if (!Has(generator, $$generatorStart))
 		throw new TypeError('Generator prototype expected');
 
 	ExpectObject(args);
 
-	generator.InnerFn = bind(
-		apply(generator.GeneratorStart, receiver, args.Value),
+	Set(generator, $$generatorInnerFn, bind(
+		apply(Get(generator, $$generatorStart), receiver, GetArrayValues(args)),
 		receiver
-	);
-	generator.GeneratorContext = new GeneratorContext();
-	generator.GeneratorState = GenStateSuspendedStart;
+	));
+	// TODO: Change from `new GeneratorContext()` to `CreateGeneratorContext()`.
+	Set(generator, $$generatorContext, new GeneratorContext());
+	Set(generator, $$generatorState, GENSTATE_SUSPENDED_START);
 
 }
 
 function GeneratorInvoke(generator) {
-	var value;
-	generator.GeneratorState = GenStateExecuting;
+	var context = Get(generator, $$generatorContext),
+		value;
+	Set(generator, $$generatorState, GENSTATE_EXECUTING);
 	do {
-		value = generator.InnerFn(generator.GeneratorContext);
-	} while (value === GeneratorContinue);
+		value = Get(generator, $$generatorInnerFn)(context);
+	} while (value === GENERATOR_CONTINUE);
 	// If an exception is thrown from innerFn, we leave state ===
-	// GenStateExecuting and loop back for another invocation.
-	generator.GeneratorState = generator.GeneratorContext.done
-		? GenStateCompleted
-		: GenStateSuspendedYield;
+	// GENSTATE_EXECUTING and loop back for another invocation.
+	Set(generator, $$generatorState,
+		context.done ? GENSTATE_COMPLETED : GENSTATE_SUSPENDED_YIELD
+	);
 	return CreateSimpleObject({
 		value: value,
-		done: generator.GeneratorContext.done
+		done: context.done
 	});
 }
 
 function GeneratorAssertCanInvoke(generator) {
-	if (generator.GeneratorState === GenStateExecuting) {
+	var state = Get(generator, $$generatorState);
+	if (state === GENSTATE_EXECUTING)
 		throw new Error('Generator is already running');
-	}
-	if (generator.GeneratorState === GenStateCompleted) {
+	if (state === GENSTATE_COMPLETED)
 		throw new Error('Generator has already finished');
-	}
 }
 
 function GeneratorNext(generator, value) {
 	ExpectObject(generator);
-	if (!('GeneratorState' in generator))
+	if (!Has(generator, $$generatorState))
 		throw new TypeError('Generator expected');
 	GeneratorAssertCanInvoke(generator);
-	var delegateInfo = GeneratorHandleDelegate(generator, GeneratorNext, value);
+	var delegateInfo = GeneratorHandleDelegate(generator, GeneratorNext, value),
+		context = Get(generator, $$generatorContext);
 	if (delegateInfo)
 		return delegateInfo;
-	if (generator.GeneratorState === GenStateSuspendedYield)
-		generator.GeneratorContext.sent = value;
+	if (Get(generator, $$generatorState) === GENSTATE_SUSPENDED_YIELD)
+		context.sent = value;
 	while (true) try {
 		return GeneratorInvoke(generator);
 	} catch (exception) {
-		generator.GeneratorContext.dispatchException(proxyJs(exception));
+		context.dispatchException(
+			proxyJs(exception)
+		);
 	}
 }
 
 function GeneratorThrow(generator, exception) {
 	ExpectObject(generator);
-	if (!('GeneratorState' in generator))
+	if (!(Has(generator, $$generatorState)))
 		throw new TypeError('Generator expected');
 	GeneratorAssertCanInvoke(generator);
-	var delegateInfo = GeneratorHandleDelegate(generator, GeneratorThrow, exception);
+	var delegateInfo = GeneratorHandleDelegate(
+		generator, GeneratorThrow, exception
+	);
 	if (delegateInfo)
 		return delegateInfo;
-	if (generator.GeneratorState === GenStateSuspendedStart) {
-		generator.GeneratorState = GenStateCompleted;
+	if (Get(generator, $$generatorState) === GENSTATE_SUSPENDED_START) {
+		Set(generator, $$generatorState, GENSTATE_COMPLETED);
 		throw UnwrapProto(exception);
 	}
 	while (true) {
-		generator.GeneratorContext.dispatchException(exception);
+		Get(generator, $$generatorContext).dispatchException(exception);
 		try {
 			return GeneratorInvoke(generator);
 		} catch (thrown) {
@@ -120,39 +126,38 @@ function GeneratorThrow(generator, exception) {
 }
 
 function GeneratorHandleDelegate(generator, method, arg) {
-	var delegate = generator.GeneratorContext.delegate,
+	var context = Get(generator, $$generatorContext),
+		delegate = context.delegate,
 		info;
 	if (delegate) {
 		try {
 			info = method(delegate.generator, arg);
 		} catch (uncaught) {
-			generator.GeneratorContext.delegate = null;
+			context.delegate = null;
 			return GeneratorThrow(generator, proxyJs(uncaught));
 		}
-
 		if (info !== undefined) {
 			ExpectObject(info);
-			if (info.Value.done) {
-				generator.GeneratorContext[delegate.resultName] = info.Value.value;
-				generator.GeneratorContext.next = delegate.nextLoc;
-			} else {
-				return info;
+			if (Get(info, 'done')) {
+				context[delegate.resultName] = Get(info, 'value');
+				context.next = delegate.nextLoc;
 			}
+			else
+				return info;
 		}
-
-		generator.GeneratorContext.delegate = null;
+		context.delegate = null;
 	}
 }
 
 var GeneratorProto = CreatePrototype({
 
-	'@Iterator': function iterator() {
+	'@@iterator': function iterator() {
 		return this;
 	},
 
 	init: function init() {
 		// TODO: Each generator's init should probably adjust it's arity
-		GeneratorInit(this, slice(arguments), this);
+		GeneratorInit(this, CreateArray(null, arguments), this);
 	},
 
 	next: function next(value) {
@@ -272,16 +277,16 @@ var GeneratorContext = (function() {
 
 		delegateYield: function(generator, resultName, nextLoc) {
 
-			var info = GeneratorNext(generator, this.sent);
+			var info = GeneratorNext(generator, this.sent),
+				value = Get(info, 'value');
 
 			ExpectObject(info);
 
-			if (info.Value.done) {
+			if (Get(info, 'done')) {
 				this.delegate = null;
-				this[resultName] = info.Value.value;
+				this[resultName] = value;
 				this.next = nextLoc;
-
-				return GeneratorContinue;
+				return GENERATOR_CONTINUE;
 			}
 
 			this.delegate = {
@@ -290,7 +295,7 @@ var GeneratorContext = (function() {
 				nextLoc: nextLoc
 			};
 
-			return info.Value.value;
+			return value;
 
 		}
 

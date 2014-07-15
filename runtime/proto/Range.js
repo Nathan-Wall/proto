@@ -13,38 +13,50 @@ function CreateRange(proto, inclusive, from, to, step) {
 	step = ToNumber(step);
 	if (step !== step)
 		throw new RangeError('Invalid step');
-	obj.RangeFrom = from;
-	obj.RangeTo = to;
-	obj.RangeInclusive = ToBoolean(inclusive);
-	obj.RangeStep = step;
+	DefineValue(obj, $$rangeFrom, from);
+	DefineValue(obj, $$rangeTo, to);
+	DefineValue(obj, $$rangeInclusive, ToBoolean(inclusive));
+	DefineValue(obj, $$rangeStep, step);
 	return obj;
 }
 
 var RangeProto = CreatePrototype({
 
-	'@Iterator': function iterator() {
+	'@@iterator': function iterator() {
 		ExpectObject(this);
-		if (!('RangeFrom' in this) || !('RangeTo' in this))
+		if (!Has(this, $$rangeFrom) || !Has(this, $$rangeTo))
 			throw new TypeError('Range expected');
 		var iter = CreateObject(RangeIteratorProto);
-		iter.RangeIteratorFrom = this.RangeFrom;
-		iter.RangeIteratorTo = this.RangeTo;
-		iter.RangeIteratorStep = this.RangeStep;
-		iter.RangeIteratorInclusive = this.RangeInclusive;
-		iter.RangeIteratorDone = false;
-		iter.RangeIteratorIteration = 0;
+		DefineValue(iter, $$rangeIteratorFrom, Get(this, $$rangeFrom));
+		DefineValue(iter, $$rangeIteratorTo, Get(this, $$rangeTo));
+		DefineValue(iter, $$rangeIteratorStep, Get(this, $$rangeStep));
+		DefineValue(iter, $$rangeIteratorInclusive,
+			Get(this, $$rangeInclusive)
+		);
+		DefineValue(iter, $$rangeIteratorDone, false);
+		DefineValue(iter, $$rangeIteratorIteration, 0);
 		return iter;
 	},
 
-	'@Get': function get(obj, receiver) {
+	'@@get': function get(obj, receiver) {
 		ExpectObject(this);
-		if (!('RangeFrom' in this) || !('RangeTo' in this))
+		if (!Has(this, $$rangeFrom) || !Has(this, $$rangeTo))
 			throw new TypeError('Range expected');
-		return Slice(obj, this.RangeFrom, this.RangeTo, receiver);
+		return Slice(
+			obj,
+			Get(this, $$rangeFrom),
+			Get(this, $$rangeTo),
+			receiver
+		);
 	},
 
-	'@GetOwn': function getOwn(obj, receiver) {
-		return SliceOwn(obj, this.RangeFrom, this.RangeTo, receiver);
+	'@@getOwn': function getOwn(obj, receiver) {
+		return SliceOwn(
+			obj,
+			Get(this, $rangeFrom),
+			Get(this, $rangeTo),
+			receiver
+		);
 	}
 
 });
@@ -59,14 +71,14 @@ var RangeProto = CreatePrototype({
 var RangeIteratorProto = CreateObject(undefined, {
 	next: CreateFunction(undefined, function() {
 		ExpectObject(this);
-		if (!('RangeIteratorFrom' in this))
+		if (!Has(this, $$rangeIteratorFrom))
 			throw new TypeError('Range iterator expected');
-		var from = this.RangeIteratorFrom,
-			to = this.RangeIteratorTo,
-			inclusive = this.RangeIteratorInclusive,
-			step = this.RangeIteratorStep,
-			done = this.RangeIteratorDone,
-			iteration = this.RangeIteratorIteration,
+		var from = Get(this, $$rangeIteratorFrom),
+			to = Get(this, $$rangeIteratorTo),
+			inclusive = Get(this, $$rangeIteratorInclusive),
+			step = Get(this, $$rangeIteratorStep),
+			done = Get(this, $$rangeIteratorDone),
+			iteration = Get(this, $$rangeIteratorIteration),
 			// We use this kind of calculation, rather than additive, for higher
 			// precision when using a non-integer step.
 			current = from + step * iteration;
@@ -82,8 +94,10 @@ var RangeIteratorProto = CreateObject(undefined, {
 		// Make the following cases produce 1 value:
 		// `-inf...-inf` and `inf...inf`
 		if (from === to && step != 0)
-			this.RangeIteratorDone = true;
-		this.RangeIteratorIteration++;
+			Set(this, $$rangeIteratorDone, true);
+		Set(this, $$rangeIteratorIteration,
+			Get(this, $$rangeIteratorIteration) + 1
+		);
 		return CreateObject(undefined, {
 			value: current,
 			done: false
@@ -93,9 +107,13 @@ var RangeIteratorProto = CreateObject(undefined, {
 
 function ModifyRangeStep(range, step) {
 	ExpectObject(range);
-	if (!('RangeFrom' in range))
+	if (!Has(range, $$rangeFrom))
 		throw new TypeError('Range expected');
 	return CreateRange(
-		undefined, range.RangeInclusive, range.RangeFrom, range.RangeTo, step
+		undefined,
+		Get(range, $$rangeInclusive),
+		Get(range, $$rangeFrom),
+		Get(range, $$rangeTo),
+		step
 	);
 }

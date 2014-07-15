@@ -30,6 +30,7 @@ var Object = global.Object,
 	abs = Math.abs,
 	pow = Math.pow,
 	ceil = Math.ceil,
+	random = Math.random,
 	DateNow = Date.now,
 	DateParse = Date.parse,
 
@@ -78,6 +79,7 @@ var Object = global.Object,
 	ObjectProto = (function() {
 		var o = create(null);
 		o.Value = create(null);
+		o.Symbols = create(null);
 		return o;
 	})(),
 
@@ -89,18 +91,21 @@ function ToArray(value) {
 	ExpectObject(value);
 	if (IsLike(value, ArrayProto))
 		return value;
-	var r = create(null);
+	var r = create(null),
+		from, to, i;
 	r.length = 0;
-	if (('From' in value) && ('To' in value)) {
-		if (value.From === Infinity || value.From === -Infinity
-		|| value.To === Infinity || value.To === -Infinity)
+	if (Has(value, $$rangeFrom) && Has(value, $$rangeTo)) {
+		from = Get(value, $$rangeFrom);
+		to = Get(value, $$rangeTo);
+		if (from === Infinity || from === -Infinity
+		|| to === Infinity || to === -Infinity)
 			throw new RangeError('Infinite range');
-		if (value.From < value.To)
-			for (var i = value.From; i < value.To; i++)
+		if (from < to)
+			for (i = from; i < to; i++)
 				push(r, i);
 		else
-			for (var i = value.From; i > value.To; i--)
-				push(r, i);				
+			for (i = from; i > to; i--)
+				push(r, i);
 		return CreateArray(undefined, r);
 	}
 	throw new TypeError('Object is not iterable');
@@ -130,21 +135,28 @@ function ToType(value) {
 	if (value === null || value === undefined)
 		return 'nil';
 	if (value.Primitive)
-		return value.Type;
+		return Get(value, $$type);
 	// Note that since functions are wrapped, the return value should be
 	// "object".
 	return typeof value;
 }
 
+// For efficiency, `arrayMerge` accepts both ES arrays and Proto array-likes,
+// so it must be smart enough to work for either kind.  ES values will always
+// be real arrays, so we can use `isArray` for detection.
 function arrayMerge(/* ...arrays */) {
-	var r = create(null);
+	var r = create(null),
+		L;
 	r.length = 0;
 	for (var i = 0, arg; i < arguments.length; i++) {
 		arg = arguments[i];
 		if (isArray(arg))
 			pushAll(r, arg);
-		else
-			pushAll(r, arg.Value);
+		else {
+			L = ToLength(Get(arg, 'length'));
+			for (var j = 0; j < L; j++)
+				push(r, Get(arg, j));
+		}
 	}
 	return slice(r);
 }
@@ -176,7 +188,7 @@ function proxyJs(value) {
 	p.ProxyJs = true;
 	p.Value = value;
 	if (typeof value == 'function') {
-		p.Function = function() {
+		SetSymbol(p, $$function, function() {
 			var receiver = this,
 				args = create(null);
 			args.length = 0;
@@ -189,8 +201,8 @@ function proxyJs(value) {
 				push(args, arg);
 			}
 			return proxyJs(apply(value, receiver, args));
-		};
-		p.Receiver = DYNAMIC_THIS;
+		});
+		SetSymbol(p, $$receiver, DYNAMIC_THIS);
 	}
 	return p;
 }
@@ -205,8 +217,8 @@ function UnwrapProto(value) {
 	// primitive extensions, like symbols, can't be passed out of the system
 	if (value.Primitive)
 		return undefined;
-	if ('Function' in value)
-		return UnproxyProtoFunction(value.Function);
+	if (HasSymbol(value, $$function))
+		return UnproxyProtoFunction(GetSymbol(value, $$function));
 	V = value.Value;
 	res = create(UnwrapProto(getPrototypeOf(value)));
 	ks = getOwnPropertyNames(V);
@@ -241,7 +253,7 @@ function __convertFunctions__(obj) {
 	for (var i = 0, k; i < K.length; i++) {
 		k = K[i];
 		if (typeof obj[k] == 'function')
-			ret.Value[k] = CreateFunction(FunctionProto, obj[k]);
+			Set(ret, k, CreateFunction(FunctionProto, obj[k]));
 	}
 	return ret;
 }

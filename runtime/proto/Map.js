@@ -1,7 +1,7 @@
 // This implementation is very closely based on the 2014-05-22 ES6 draft for
 // Map.
 
-var curMapId = createSack([ MIN_PRECISION ]),
+var mapIds = new Identifiers(),
 
 	MAP_DELETED = create(null),
 	MAP_ITER_KEY = 1,
@@ -54,27 +54,11 @@ var MapProto = CreatePrototype({
 		return CreateMapIterator(this, MAP_ITER_VALUE);
 	},
 
-	'@Iterator': function iterator() {
+	'@@iterator': function iterator() {
 		return CreateMapIterator(this, MAP_ITER_KEY | MAP_ITER_VALUE);
 	}
 
 });
-
-// This should be called without the `index` argument. That argument is used
-// for recursion.
-function nextMapId(index) {
-	if (index === undefined)
-		index = 0;
-	curMapId[index]++;
-	if (curMapId[index] > MAX_PRECISION) {
-		curMapId[index] = MIN_PRECISION;
-		if (curMapId.length == index + 1)
-			push(curMapId, MIN_PRECISION);
-		else
-			nextMapId(index + 1);
-	}
-	return join(curMapId, '.');
-}
 
 function ExpectMap(M) {
 	if (!IsMap(M))
@@ -87,26 +71,26 @@ function MapInit(map, iterable) {
 	var iter, adder, next, nextValue, k, v;
 
 	ExpectObject(map);
-	if (hasOwn(map, 'MapKeys'))
+	if (HasOwn(map, $$mapKeys))
 		throw new TypeError('Map has already been initialized');
 
 	// Setting to 'initializing' temporarily in case side effects from the
 	// steps below try to initialize the map again.
-	map.MapKeys = 'initializing';
-	map.MapPrimitiveHashValues = 'initializing';
-	map.MapPrimitiveHashIndices = 'initializing';
-	map.MapId = 'initializing';
-	map.MapSize = 'initializing';
+	Set(map, $$mapKeys, 'initializing');
+	Set(map, $$mapPrimitiveHashValues, 'initializing');
+	Set(map, $$mapPrimitiveHashIndices, 'initializing');
+	Set(map, $$mapId, 'initializing');
+	Set(map, $$mapSize, 'initializing');
 
 	if (iterable != null) {
 		iter = GetIterator(iterable);
-		adder = Get(map, "set");
+		adder = Get(map, 'set');
 		if (!IsCallable(adder)) {
-			delete map.MapKeys;
-			delete map.MapPrimitiveHashValues;
-			delete map.MapPrimitiveHashIndices;
-			delete map.MapId;
-			delete map.MapSize;
+			Delete(map, $$mapKeys);
+			Delete(map, $$mapPrimitiveHashValues);
+			Delete(map, $$mapPrimitiveHashIndices);
+			Delete(map, $$mapId);
+			Delete(map, $$mapSize);
 			throw new TypeError('Expected `set` method on Map object');
 		}
 	}
@@ -130,21 +114,21 @@ function IsMap(map) {
 	var mKeys;
 	if (!IsObject(map))
 		return false;
-	mKeys = map.MapKeys;
+	mKeys = Get(map, $$mapKeys);
 	return mKeys !== undefined && mKeys !== 'initializing';
 }
 
 function ClearMap(map, skipValidation) {
 	if (!skipValidation) {
 		ExpectMap(map);
-		while (!hasOwn(map, 'MapKeys'))
+		while (!HasOwn(map, $$mapKeys))
 			map = getPrototype(map);
 	}
-	map.MapKeys = createSack();
-	map.MapPrimitiveHashValues = create(null);
-	map.MapPrimitiveHashIndices = create(null);
-	map.MapId = nextMapId();
-	map.MapSize = 0;
+	Set(map, $$mapKeys, createSack());
+	Set(map, $$mapPrimitiveHashValues, create(null));
+	Set(map, $$mapPrimitiveHashIndices, create(null));
+	Set(map, $$mapId, mapIds.next());
+	Set(map, $$mapSize, 0);
 }
 
 function MapDeleteIndex(map, index) {
@@ -152,23 +136,24 @@ function MapDeleteIndex(map, index) {
 	// by removing the deleted items.
 	// The clean-up operation should be O(n), but since we don't do
 	// it every time, `delete` can be faster than O(n) sometimes.
-	M.MapKeys[index] = MAP_DELETED;
+	Get(M, $$mapKeys)[index] = MAP_DELETED;
 }
 
 function MapGet(M, key) {
-	var mId, keyHash;
+	var mId, keyHash, mapValue;
 	M = ExpectMap(M);
 	if (IsWrapper(key)) {
-		if (!hasOwn(key, 'MapValue'))
+		if (!HasOwn(key, $$mapValue))
 			return undefined;
-		mId = M.MapId;
-		if (!(mId in key.MapValue))
+		mId = Get(M, $$mapId);
+		mapValue = Get(key, $$mapValue);
+		if (!(mId in mapValue))
 			return undefined;
-		return key.MapValue[mId];
+		return mapValue[mId];
 	}
 	else {
 		keyHash = typeof key + ':' + key;
-		return M.MapPrimitiveHashValues[keyHash];
+		return Get(M, $$mapPrimitiveHashValues)[keyHash];
 	}
 }
 
@@ -176,65 +161,70 @@ function MapHas(M, key) {
 	var keyHash;
 	ExpectMap(M);
 	if (IsWrapper(key)) {
-		if (!hasOwn(key, 'MapValue'))
+		if (!HasOwn(key, $$mapValue))
 			return false;
-		return M.MapId in key.MapValue;
+		return Get(M, $$mapId) in Get(key, $$mapValue);
 	}
 	else {
 		keyHash = typeof key + ':' + key;
-		return keyHash in M.MapPrimitiveHashValues;
+		return keyHash in Get(M, $$mapPrimitiveHashValues);
 	}
 }
 
 function MapDelete(M, key) {
-	var mId, keyHash;
+	var mId, keyHash, mapPrimitiveHashValues, mapPrimitiveHashIndices;
 	M = ExpectMap(M);
 	if (IsWrapper(key)) {
-		if (!hasOwn(key, 'MapValue'))
+		if (!HasOwn(key, $$mapValue))
 			return false;
-		mId = M.MapId;
-		if (!(mId in key.MapValue))
+		mId = Get(M, $$mapId);
+		if (!(mId in Get(key, $$mapValue)))
 			return false;
-		MapDeleteIndex(map, key.MapIndex[mId]);
-		delete key.MapValue[mId];
-		delete key.MapIndex[mId];
-		M.MapSize--;
+		MapDeleteIndex(map, Get(key, $$mapIndex)[mId]);
+		delete Get(key, $$mapValue)[mId];
+		delete Get(key, $$mapIndex)[mId];
+		Set(M, $$mapSize, Get(M, $$mapSize) - 1);
 		return true;
 	}
 	else {
 		keyHash = typeof key + ':' + key;
-		if (!(keyHash in M.MapPrimitiveHashValues))
+		mapPrimitiveHashValues = Get(M, $$mapPrimitiveHashValues);
+		if (!(keyHash in mapPrimitiveHashValues))
 			return false;
-		MapDeleteIndex(map, M.MapPrimitiveHashIndices[keyHash]);
-		delete M.MapPrimitiveHashValues[keyHash];
-		delete M.MapPrimitiveHashIndices[keyHash];
-		M.MapSize--;
+		mapPrimitiveHashIndices = Get(M, $$mapPrimitiveHashIndices);
+		MapDeleteIndex(map, mapPrimitiveHashIndices[keyHash]);
+		delete mapPrimitiveHashValues[keyHash];
+		delete mapPrimitiveHashIndices[keyHash];
+		Set(M, $$mapSize, Get(M, $$mapSize) - 1);
 		return true;
 	}
 }
 
 function MapSet(M, key, value) {
-	var mId, keyHash;
+	var mId, keyHash, mapValue, mapKeys, mapPrimitiveHashValues;
 	ExpectMap(M);
 	if (IsWrapper(key)) {
-		mId = M.MapId;
-		if (!hasOwn(key, 'MapValue'))
-			key.MapValue = create(null);
-		else if (!(mId in key.MapValue)) {
-			key.MapIndex[mId] = M.MapKeys.length;
-			push(M.MapKeys, key);
-			M.MapSize++;
+		mId = Get(M, $$mapId);
+		if (!HasOwn(key, $$mapValue))
+			mapValue = Set(key, $$mapValue, create(null));
+		else if (!(mId in (mapValue = Get(key, $$mapValue)))) {
+			mapKeys = Get(M, $$mapKeys);
+			Get(key, $$mapIndex)[mId] = mapKeys.length;
+			push(mapKeys, key);
+			Set(M, $$mapSize, Get(M, $$mapSize) + 1);
 		}
-		key.MapValue[mId] = value;
+		mapValue[mId] = value;
 	}
 	else {
 		keyHash = typeof key + ':' + key;
-		if (!(keyHash in M.MapPrimitiveHashValues)) {
-			M.MapPrimitiveHashIndices[keyHash] = M.MapKeys.length;
-			push(M.MapKeys, key);
-			M.MapSize++;
+		mapPrimitiveHashValues = Get(M, $$mapPrimitiveHashValues);
+		if (!(keyHash in mapPrimitiveHashValues)) {
+			mapKeys = Get(M, $$mapKeys);
+			Get(M, $$mapPrimitiveHashIndices)[keyHash] = mapKeys.length;
+			push(mapKeys, key);
+			Set(M, $$mapSize, Get(M, $$mapSize) + 1);
 		}
-		M.MapPrimitiveHashValues[keyHash] = value;
+		mapPrimitiveHashValues[keyHash] = value;
 	}
 	return value;
 }
@@ -243,30 +233,29 @@ function CreateMapIterator(map, kind) {
 	var iterator;
 	ExpectMap(map);
 	iterator = CreateObject(MapIteratorPrototype);
-	iterator.MapIteratorMap = map;
-	iterator.MapIteratorNextIndex = 0;
-	iterator.MapIteratorKind = kind;
+	Set(iterator, $$mapIteratorMap, map);
+	Set(iterator, $$mapIteratorNextIndex, 0);
+	Set(iterator, $$mapIteratorKind, kind);
 	return iterator;
 }
-
 
 var MapIteratorPrototype = CreatePrototype({
 
 	next: function next() {
 		var O, m, index, itemKind, keys, key, result;
 		O = ExpectObject(O);
-		if (!('MapIteratorMap' in O))
+		if (!Has(O, $$mapIteratorMap))
 			throw new TypeError('MapIterator expected');
-		m = O.MapIteratorMap;
-		index = O.MapIteratorNextIndex;
-		itemKind = O.MapIteratorKind;
+		m = Get(O, $$mapIteratorMap);
+		index = Get(O, $$mapIteratorNextIndex);
+		itemKind = Get(O, $$mapIteratorKind);
 		if (m === undefined)
 			return CreateIterResultObject(undefined, true);
 		ExpectMap(m);
-		keys = m.MapKeys;
+		keys = Get(m, $$mapKeys);
 		while (index < keys.length) {
 			key = keys[index];
-			O.MapIteratorNextIndex = ++index;
+			Set(O, $$mapIteratorNextIndex, ++index);
 			if (key !== MAP_DELETED) {
 				switch (itemKind) {
 					case MAP_ITER_KEY:
@@ -286,10 +275,10 @@ var MapIteratorPrototype = CreatePrototype({
 				return CreateIterResultObject(result, false);
 			}
 		}
-		O.MapIteratorMap = undefined;
+		Set(O, $$mapIteratorMap, undefined);
 		return CreateIterResultObject(undefined, true);
 	},
 
-	'@Iterator': function() { return this; }
+	'@@iterator': function() { return this; }
 
 });

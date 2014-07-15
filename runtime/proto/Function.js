@@ -49,44 +49,33 @@ function FunctionInit(obj, jsfn, name, arity, receiver) {
 		arity = jsfn.length;
 	else
 		arity = ToUint32(arity);
-	obj.Function = jsfn;
-	obj.Receiver = receiver;
-	define(obj.Value, 'name', {
-		value: name,
-		writable: false,
-		enumerable: false,
-		configurable: false
-	});
-	define(obj.Value, 'arity', {
-		value: arity,
-		writable: false,
-		enumerable: false,
-		configurable: false
-	});
+	SetSymbol(obj, '@@function', jsfn);
+	SetSymbol(obj, '@@receiver', receiver);
+	Define(obj, 'value', 'name', name, false, false, false);
+	Define(obj, 'value', 'arity', arity, false, false, false);
 }
 
 function IsCallable(value) {
 	if (!IsObject(value))
 		return false;
-	var F = value.Function;
+	var F = GetSymbol(value, '@@function');
 	return typeof F == 'function';
 }
 
 // args should always be a native JS array (or undefined)
 function Call(f, receiver, args) {
-	var F = GetFunction(f);
-	if (f.Receiver !== DYNAMIC_THIS)
-		receiver = f.Receiver;
-	if (args !== undefined) {
-		if (!isArray(args))
-			throw new TypeError('Native JS Array expected');
-	}
+	var F = GetFunction(f),
+		R = GetSymbol(f, '@@receiver');
+	if (R !== DYNAMIC_THIS)
+		receiver = R;
+	if (args !== undefined && !isArray(args))
+		throw new TypeError('Native JS Array expected');
 	return apply(F, receiver, args);
 }
 
 function GetFunction(F) {
 	ExpectFunction(F);
-	return F.Function;
+	return GetSymbol(F, '@@function');
 }
 
 function CallMethod(obj, key, args) {
@@ -112,13 +101,14 @@ function CallOwnMethod(obj, key, args) {
 }
 
 function Bind(obj, receiver) {
-	var f = GetFunction(obj);
-	if (obj.Receiver !== DYNAMIC_THIS)
-		receiver = obj.Receiver;
+	var f = GetFunction(obj),
+		R = GetSymbol(obj, '@@receiver');
+	if (R !== DYNAMIC_THIS)
+		receiver = R;
 	if (arguments.length == 1)
 	 	f = lazyBind(f);
 	return CreateFunction(
-		FunctionProto, f, obj.name, obj.arity + 1, receiver
+		FunctionProto, f, Get(obj, 'name'), Get(obj, 'arity') + 1, receiver
 	);
 }
 
@@ -129,7 +119,7 @@ function AsCoercive(f, nilable) {
 			if (value === null || value === undefined)
 				return undefined;
 			return Call(f, undefined, [ value ]);
-		}, f.name, 1);
+		}, Get(f, 'name'), 1);
 	return f;
 }
 
@@ -151,8 +141,8 @@ function PartiallyApply(f, appliedArgs) {
 		// iterator slots) and note which ones have been used.
 		for (i = 0; i < appliedArgs.length; i++) {
 			arg = appliedArgs[i];
-			if (IsWrapper(arg) && 'Slot' in arg) {
-				slot = arg.Slot;
+			if (IsWrapper(arg) && Has(arg, $$slot)) {
+				slot = Get(arg, $$slot);
 				if (typeof slot == 'number') {
 					if (sign(slot) == -1)
 						slot = arguments.length - 1 + slot;
@@ -180,23 +170,23 @@ function PartiallyApply(f, appliedArgs) {
 		// Second pass: Fill in implicit slots
 		for (i = 0; i < args.length; i++) {
 			arg = args[i];
-			if (IsWrapper(arg) && 'Slot' in arg) {
-				slot = arg.Slot;
-				if (slot === null && !arg.RestSlot) {
+			if (IsWrapper(arg) && Has(arg, $$slot)) {
+				slot = Get(arg, $$slot);
+				if (slot === null && !Has(arg, $$restSlot)) {
 					j = shift(unusedCollapsed);
 					args[i] = arguments[j];
 					unusedIndices[j] = false;
 				}
-				else if (!arg.RestSlot)
+				else if (!Has(arg, $$restSlot))
 					throw new Error('Unexpected slot value');
 			}
 		}
 		// Third pass: Fill in rest slots
 		for (i = 0; i < args.length; i++) {
 			arg = args[i];
-			if (IsWrapper(arg) && 'Slot' in arg) {
-				slot = arg.Slot;
-				if (slot !== null || !arg.RestSlot)
+			if (IsWrapper(arg) && Has(arg, $$slot)) {
+				slot = Get(arg, $$slot);
+				if (slot !== null || !Has(arg, $$restSlot))
 					throw new Error('Unexpected slot value');
 				insert = PartiallyApplyRest(unusedCollapsed, arguments);
 				spliceAll(args, i, 1, insert);

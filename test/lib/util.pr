@@ -57,4 +57,4 @@ assert.notProperty = fn(a, b, m) :{
 };
 
 export { it, assert };
-export { describe } from '@env';
+export { xit, describe } from '@env';

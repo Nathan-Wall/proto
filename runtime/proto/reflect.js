@@ -36,26 +36,31 @@ var reflect = CreatePrototype({
 		// Note: It makes sense for Proto to examine inherited properties in
 		// the descriptors, although it doesn't for JS, because it's trivial to
 		// create dictionaries in Proto.
-		return Define(obj, key, desc);
+		return DefineDescriptor(obj, key, desc);
 	}
 
 });
 
 // properties will always be a native JS object
 function CreateObject(proto, properties, staticProps, extendedProps) {
-	var wrapper, protoValue;
+	var wrapper, protoValue, protoSymbols;
 	if (proto === undefined)
 		proto = ObjectProto;
 	else if (proto !== null && !IsObject(proto))
 		throw new TypeError('Expected object or nil');
-	if (proto === null)
+	if (proto === null) {
 		protoValue = null;
-	else
+		protoSymbols = null;
+	}
+	else {
 		protoValue = proto.Value;
+		protoSymbols = proto.Symbols;
+	}
 	if (properties !== undefined)
 		expectObject(properties);
 	wrapper = create(proto);
 	wrapper.Value = like(protoValue, properties);
+	wrapper.Symbols = like(protoSymbols, properties);
 	if (staticProps !== undefined) {
 		expectObject(staticProps);
 		wrapper.Static = own(staticProps);
@@ -88,28 +93,43 @@ function CreateSimpleObject(properties) {
 }
 
 function CreatePrimitiveWrapper(proto) {
-	var wrapper, protoValue;
+	var wrapper, protoValue, protoSymbols;
 	if (!IsObject(proto))
 		throw new TypeError('Expected object');
 	protoValue = proto.Value;
+	protoSymbols = proto.Symbols;
 	wrapper = create(proto);
 	wrapper.Value = create(protoValue);
+	wrapper.Symbols = create(protoSymbols);
 	wrapper.Primitive = true;
 	return wrapper;
 }
 
+// This function provides a convenience for defining built-in prototypes.
 function CreatePrototype(properties) {
 	var props = keys(properties),
 		staticProps,
 		extendedProps = [ ],
 		symbols = create(null),
-		key, proto, i;
+		key, proto, i, ch;
 	for (i = 0; i < props.length; i++) {
 		key = props[i];
 		if (charAt(key, 0) == '@') {
-			symbols[stringSlice(key, 1)] = CreateFunction(
-				undefined, properties[key]
-			);
+			// TODO: Should this instead be an assertion that can be removed
+			// in production version for performance?  This is just here to
+			// catch mistakes in the runtime.
+			if (charAt(key, 1) != '@')
+				throw new Error(
+					'Expected @@ for built-in symbol "' + key + '"'
+				);
+			// TODO: Like the above, the next few lines could also be
+			// removable asserts.
+			ch = charAt(key, 2);
+			if (toLowerCase(ch) !== ch)
+				throw new Error(
+					'Expected built-in symbol to begin with a lowercase letter'
+				);
+			symbols[key] = CreateFunction(undefined, properties[key]);
 			delete properties[key];
 		}
 		else if (test(/^static_/, key)) {
@@ -127,7 +147,7 @@ function CreatePrototype(properties) {
 	props = keys(symbols);
 	for (i = 0; i < props.length; i++) {
 		key = props[i];
-		proto[key] = symbols[key];
+		proto.Symbols[key] = symbols[key];
 	}
 	return proto;
 }
@@ -200,39 +220,29 @@ function IsLike(obj, proto) {
 	return isPrototypeOf(proto.Value, obj.Value);
 }
 
+// TODO: Should this just be implemented by calling `Mixin` on a new object?
 function Own(obj) {
 	ExpectObject(obj);
 	var O = CreateObject(null),
 		keys = getOwnPropertyNames(obj),
-		i, key;
+		i, key, pkeys, j, pkey;
 	for (i = 0, key; i < keys.length; i++) {
 		key = keys[i];
-		define(O, key, getOwnPropertyDescriptor(obj, key));
-	}
-	keys = getOwnPropertyNames(obj.Value);
-	for (i = 0, key; i < keys.length; i++) {
-		key = keys[i];
-		define(O.Value, key, getOwnPropertyDescriptor(obj.Value, key));
-	}
-	if (hasOwn(obj, 'StaticSymbols')) {
-		keys = getOwnPropertyNames(obj.StaticSymbols);
-		O.StaticSymbols = create(null);
-		for (i = 0, key; i < keys.length; i++) {
-			key = keys[i];
-			define(O.StaticSymbols, key,
-				getOwnPropertyDescriptor(obj.StaticSymbols, key)
-			);
+		if (/^Value$|^Static$|^Symbols$|^StaticSymbols$/.test(key)) {
+			pkeys = getOwnPropertyNames(obj[key]);
+			if (/^Static/.test(key))
+				O[key] = create(null);
+			for (j = 0; j < pkeys.length; j++) {
+				pkey = pkeys[j];
+				define(O[key], pkey,
+					getOwnPropertyDescriptor(obj[key], pkey)
+				);
+			}
 		}
-	}
-	if (hasOwn(obj, 'Static')) {
-		keys = getOwnPropertyNames(obj.Static);
-		O.Static = create(null);
-		for (i = 0, key; i < keys.length; i++) {
-			key = keys[i];
-			define(O.Static, key,
-				getOwnPropertyDescriptor(obj.Static, key)
-			);
-		}
+		else
+			// TODO: What propreties would this include? Should these actually
+			// be copied?
+			define(O, key, getOwnPropertyDescriptor(obj, key));
 	}
 	return O;
 }
@@ -242,8 +252,8 @@ function Has(obj, key) {
 	if (!IsObject(obj))
 		return false;
 	if (IsWrapper(key)) {
-		if ('Has' in key) {
-			HasF = ExpectFunction(key.Has);
+		if (HasSymbol(key, $$has)) {
+			HasF = ExpectFunction(GetSymbol(key, $$has));
 			return Call(HasF, key, [ obj ]);
 		}
 		else
@@ -261,8 +271,8 @@ function HasOwn(obj, key) {
 	if (!IsObject(obj))
 		return false;
 	if (IsWrapper(key)) {
-		if ('HasOwn' in key) {
-			HasF = ExpectFunction(key.HasOwn);
+		if (HasSymbol(key, $$hasOwn)) {
+			HasF = ExpectFunction(GetSymbol(key, $$hasOwn));
 			return Call(HasF, key, [ obj ]);
 		}
 		else
@@ -275,8 +285,6 @@ function HasOwn(obj, key) {
 		|| hasOwn(obj, 'Static') && hasOwn(obj.Static, K));
 }
 
-// TODO: Uses of `someObj.Value.someKey` in other functions should probably
-// be changed to use `Get`, especially considering static properties.
 function Get(obj, key, receiver) {
 	var desc, get, GetF, proto, K, T, O;
 	if (obj === null || obj === undefined)
@@ -284,8 +292,8 @@ function Get(obj, key, receiver) {
 	if (receiver === null)
 		receiver = undefined;
 	if (IsWrapper(key)) {
-		if ('Get' in key) {
-			GetF = ExpectFunction(key.Get);
+		if (HasSymbol(key, $$get)) {
+			GetF = ExpectFunction(GetSymbol(key, $$get));
 			return Call(GetF, key, [ obj, receiver ]);
 		}
 		else
@@ -345,30 +353,29 @@ function Get(obj, key, receiver) {
 		receiver = obj;
 	// `GetDescriptor` expects the raw key
 	desc = GetDescriptor(proto, key);
-	if (desc === undefined || desc.Value.static)
+	if (desc === undefined || Get(desc, 'static'))
 		return undefined;
-	else if (hasOwn(desc.Value, 'value'))
-		return IfAccessorGet(desc.Value.value, obj);
+	else if (Has(desc, 'value'))
+		return IfAccessorGet(Get(desc, 'value'), obj);
 	else
 		throw new Error('Unexpected accessor');
 }
 
 function GetOwn(obj, key, receiver) {
-	var K, GetF;
+	var GetF;
 	if (obj === null || obj === undefined)
 		return undefined;
 	if (IsWrapper(key)) {
-		if ('GetOwn' in key) {
-			GetF = ExpectFunction(key.GetOwn);
+		if (HasSymbol(key, $$getOwn)) {
+			GetF = ExpectFunction(GetSymbol(key, $$getOwn));
 			return Call(GetF, key, [ obj, receiver ]);
 		}
 		else
 			throw new Error(
-				'Object cannot be used as a property key in get operation'
+				'Object cannot be used as a property key in get own operation'
 			);
 	}
-	K = toSafeKey(key);
-	if (hasOwn(obj.Value, K) || hasOwn(obj, 'Static') && hasOwn(obj.Static, K))
+	if (HasOwn(obj, key))
 		// `K` was made safe, so we need to pass `key` in to `Get` (since
 		// `Get` expects the raw key.)
 		return Get(obj, key, receiver);
@@ -384,8 +391,8 @@ function Set(obj, key, value, receiver) {
 		handle = UnwrapProto;
 	// TODO: Symbol setters
 	if (IsWrapper(key)) {
-		if ('Set' in key) {
-			SetF = ExpectFunction(key.Set);
+		if (HasSymbol(key, $$set)) {
+			SetF = ExpectFunction(GetSymbol(key, $$set));
 			value = handle(value);
 			Call(SetF, key, [ obj, value, receiver ]);
 			return value;
@@ -452,15 +459,15 @@ function SetOwn(obj, key, value, receiver) {
 		throw new TypeError('Cannot set property of nil');
 	ExpectObject(obj);
 	if (IsWrapper(key)) {
-		if ('SetOwn' in key) {
-			SetF = ExpectFunction(key.SetOwn);
+		if (HasSymbol(key, $$setOwn)) {
+			SetF = ExpectFunction(GetSymbol(key, $$setOwn));
 			value = handle(value);
 			Call(SetF, key, [ obj, value, receiver ]);
 			return value;
 		}
 		else
 			throw new Error(
-				'Object cannot be used as a property key in set operation'
+				'Object cannot be used as a property key in set own operation'
 			);
 	}
 	K = toSafeKey(key);
@@ -488,8 +495,8 @@ function Delete(obj, key) {
 		throw new TypeError('Cannot delete property of nil');
 	ExpectObject(obj);
 	if (IsWrapper(key)) {
-		if ('Delete' in key) {
-			DeleteF = ExpectFunction(key.Delete);
+		if (HasSymbol(key, $$delete)) {
+			DeleteF = ExpectFunction(GetSymbol(key, $$delete));
 			return !!Call(DeleteF, key, [ obj ]);
 		}
 		else
@@ -510,9 +517,16 @@ function GetKeys(obj) {
 	var keys, allKeys, set, key, i, o;
 	if (obj === undefined || obj === null || !IsObject(obj))
 		return CreateArray(ArrayProto);
-	allKeys = create(null);
-	allKeys.length = 0;
+	allKeys = createSack();
 	set = create(null);
+	if (hasOwn(obj, 'Static')) {
+		keys = getOwnPropertyNames(obj.Static);
+		for (i = 0; i < keys.length; i++) {
+			key = keys[i];
+			set[key] = true;
+			push(allKeys, key);
+		}
+	}
 	o = obj;
 	do {
 		keys = getOwnPropertyNames(o.Value);
@@ -520,23 +534,39 @@ function GetKeys(obj) {
 			key = keys[i];
 			if (!(key in set)) {
 				set[key] = true;
-				push(allKeys, keys[i]);
+				push(allKeys, key);
 			}
 		}
 	} while (o = getPrototypeOf(o));
-	if (hasOwn(obj, 'Static'))
-		pushAll(allKeys, getOwnPropertyNames(obj.Static));
 	return CreateArray(ArrayProto, allKeys);
 }
 
 function GetOwnKeys(obj) {
-	var keys;
+	var allKeys, set, keys, key, i;
 	if (obj === undefined || obj === null || !IsObject(obj))
 		return CreateArray(ArrayProto);
+	allKeys = createSack();
+	set = create(null);
+	if (hasOwn(obj, 'Static')) {
+		keys = getOwnPropertyNames(obj.Static);
+		for (i = 0; i < keys.length; i++) {
+			key = keys[i];
+			set[key] = true;
+			push(allKeys, key);
+		}
+	}
+	else
+		// Shortcut for case where object has no static properties
+		return CreateArray(ArrayProto, getOwnPropertyNames(obj.Value));
 	keys = getOwnPropertyNames(obj.Value);
-	if (hasOwn(obj, 'Static'))
-		pushAll(keys, getOwnPropertyNames(obj.Static));
-	return CreateArray(ArrayProto, keys);
+	for (i = 0; i < keys.length; i++) {
+		key = keys[i];
+		if (!(key in set)) {
+			set[key] = true;
+			push(allKeys, key);
+		}
+	}
+	return CreateArray(ArrayProto, allKeys);
 }
 
 function Freeze(obj) {
@@ -548,30 +578,21 @@ function Freeze(obj) {
 }
 
 function GetDescriptor(obj, key) {
-	var O, isStatic = false;
+	var GetDescriptorF;
 	ExpectObject(obj);
-	// TODO: what if key is a symbol or private symbol?
-	if (IsWrapper(key) && 'SymbolId' in key) {
-		key = key.SymbolId;
-		if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, key)) {
-			isStatic = true;
-			O = obj.StaticSymbols;
-		}
-		else if (key in obj)
-			O = obj;
-		else
-			return undefined;
-	} else {
-		key = toSafeKey(key);
-		if (hasOwn(obj, 'Static') && hasOwn(obj.Static, key)) {
-			isStatic = true;
-			O = obj.Static;
-		}
-		else if (key in obj.Value)
-			O = obj.Value;
-		else
-			return undefined;
+	if (IsWrapper(key) && HasSymbol(key, $$getDescriptor)) {
+		GetDescriptorF = ExpectFunction(GetSymbol(key, $$getDescriptor));
+		return Call(GetDescriptorF, obj);
 	}
+	key = toSafeKey(key);
+	if (hasOwn(obj, 'Static') && hasOwn(obj.Static, key))
+		return __createDescriptor__(obj.Static, key, true);
+	else if (key in obj.Value)
+		return __createDescriptor__(obj.Value, key, false);
+	return undefined;
+}
+
+function __createDescriptor__(O, key, isStatic) {
 	var desc = getPropertyDescriptor(O, key),
 		K = keys(desc),
 		d = create(null);
@@ -636,8 +657,8 @@ function getUncommonPropertyNames(from, compareWith) {
 
 	var namesMap = create(null),
 		names = concatUncommonNames(from, compareWith),
-		keys = create(null), name;
-	keys.length = 0;
+		keys = createSack(),
+		name;
 
 	for (var i = 0; i < names.length; i++) {
 		name = names[i];
@@ -748,6 +769,16 @@ function Mixin(to, from) {
 			to.Static = create(null);
 		mixin(to.Static, from.Static);
 	}
+	if (hasOwn(from, 'Symbols')) {
+		if (!hasOwn(to, 'Symbols'))
+			to.Symbols = create(null);
+		mixin(to.Symbols, from.Symbols);
+	}
+	if (hasOwn(from, 'StaticSymbols')) {
+		if (!hasOwn(to, 'StaticSymbols'))
+			to.StaticSymbols = create(null);
+		mixin(to.Staticymbols, from.StaticSymbols);
+	}
 	return to;
 }
 
@@ -756,11 +787,15 @@ function GetPrototype(obj) {
 	return getPrototypeOf(obj);
 }
 
+function DefineDescriptor(obj, key, desc) {
+	// TODO
+}
+
 function Define(obj, kind, key, value, isStatic, writable, configurable) {
 	// TODO: Permit this operation on wrappers?
 	ExpectObject(obj);
 	var O, desc = create(null), d, prop,
-		isSymbol = IsWrapper(key) && 'SymbolId' in key;
+		isSymbol = IsSymbol(key);
 	if (isStatic) {
 		prop = 'Static';
 		if (isSymbol)
@@ -771,12 +806,12 @@ function Define(obj, kind, key, value, isStatic, writable, configurable) {
 			O = obj[prop] = create(null);
 	}
 	else if (isSymbol)
-		O = obj;
+		O = obj.Symbols;
 	else
 		O = obj.Value;
 	kind = ToString(kind);
 	if (isSymbol)
-		key = key.SymbolId;
+		key = GetSymbolId(key);
 	else if (typeof key != 'string')
 		throw new TypeError('Expected string or symbol');
 	key = toSafeKey(key);
@@ -803,6 +838,10 @@ function Define(obj, kind, key, value, isStatic, writable, configurable) {
 	desc.enumerable = false;
 	defineProperty(O, key, desc);
 	return obj;
+}
+
+function DefineValue(obj, key, value) {
+	return Define(obj, 'value', key, value, false, true, true);
 }
 
 function define(obj, name, desc) {
