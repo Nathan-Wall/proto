@@ -13,10 +13,10 @@ function CreateRange(proto, inclusive, from, to, step) {
 	step = ToNumber(step);
 	if (step !== step)
 		throw new RangeError('Invalid step');
-	DefineValue(obj, $$rangeFrom, from);
-	DefineValue(obj, $$rangeTo, to);
-	DefineValue(obj, $$rangeInclusive, ToBoolean(inclusive));
-	DefineValue(obj, $$rangeStep, step);
+	Set(obj, $$rangeFrom, from);
+	Set(obj, $$rangeTo, to);
+	Set(obj, $$rangeInclusive, ToBoolean(inclusive));
+	Set(obj, $$rangeStep, step);
 	return obj;
 }
 
@@ -27,14 +27,14 @@ var RangeProto = CreatePrototype({
 		if (!Has(this, $$rangeFrom) || !Has(this, $$rangeTo))
 			throw new TypeError('Range expected');
 		var iter = CreateObject(RangeIteratorProto);
-		DefineValue(iter, $$rangeIteratorFrom, Get(this, $$rangeFrom));
-		DefineValue(iter, $$rangeIteratorTo, Get(this, $$rangeTo));
-		DefineValue(iter, $$rangeIteratorStep, Get(this, $$rangeStep));
-		DefineValue(iter, $$rangeIteratorInclusive,
+		Set(iter, $$rangeIteratorFrom, Get(this, $$rangeFrom));
+		Set(iter, $$rangeIteratorTo, Get(this, $$rangeTo));
+		Set(iter, $$rangeIteratorStep, Get(this, $$rangeStep));
+		Set(iter, $$rangeIteratorInclusive,
 			Get(this, $$rangeInclusive)
 		);
-		DefineValue(iter, $$rangeIteratorDone, false);
-		DefineValue(iter, $$rangeIteratorIteration, 0);
+		Set(iter, $$rangeIteratorDone, false);
+		Set(iter, $$rangeIteratorIteration, 0);
 		return iter;
 	},
 
