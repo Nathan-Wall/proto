@@ -81,6 +81,11 @@ function MapInit(map, iterable) {
 	Set(map, $$mapPrimitiveHashIndices, 'initializing');
 	Set(map, $$mapId, 'initializing');
 	Set(map, $$mapSize, 'initializing');
+	SetSymbolTransferability(map, $$mapKeys, false);
+	SetSymbolTransferability(map, $$mapPrimitiveHashValues, false);
+	SetSymbolTransferability(map, $$mapPrimitiveHashIndices, false);
+	SetSymbolTransferability(map, $$mapId, false);
+	SetSymbolTransferability(map, $$mapSize, false);
 
 	if (iterable != null) {
 		iter = GetIterator(iterable);
@@ -205,8 +210,10 @@ function MapSet(M, key, value) {
 	ExpectMap(M);
 	if (IsWrapper(key)) {
 		mId = Get(M, $$mapId);
-		if (!HasOwn(key, $$mapValue))
+		if (!HasOwn(key, $$mapValue)) {
 			mapValue = Set(key, $$mapValue, create(null));
+			SetSymbolTransferability(key, $$mapValue, false);
+		}
 		else if (!(mId in (mapValue = Get(key, $$mapValue)))) {
 			mapKeys = Get(M, $$mapKeys);
 			Get(key, $$mapIndex)[mId] = mapKeys.length;

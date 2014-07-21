@@ -48,6 +48,7 @@ function WeakMapInit(map, iterable) {
 	// Setting to 'initializing' temporarily in case side effects from the
 	// steps below try to initialize the map again.
 	Set(map, $$weakMapId, 'initializing');
+	SetSymbolTransferability(map, $$weakMapId, false);
 
 	if (iterable != null) {
 		iter = GetIterator(iterable);
@@ -120,7 +121,9 @@ function WeakMapSet(M, key, value) {
 	if (!IsObject(key))
 		throw new TypeError('WeakMap keys must be an objects');
 	wmKey = Get(key, $$weakMapValue);
-	if (wmKey === undefined)
+	if (wmKey === undefined) {
 		wmKey = Set(key, $$weakMapValue, create(null));
+		SetSymbolTransferability(key, $$weakMapValue, false);
+	}
 	return wmKey[Get(M, $$weakMapId)] = value;
 }

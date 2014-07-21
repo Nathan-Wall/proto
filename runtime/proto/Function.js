@@ -49,7 +49,10 @@ function FunctionInit(obj, jsfn, name, arity, receiver) {
 		arity = jsfn.length;
 	else
 		arity = ToUint32(arity);
-	SetSymbol(obj, '@@function', jsfn);
+	// A symbol isn't used here because this really is outside the space of
+	// the Proto language.  The value being set here is a JS function, and so
+	// Proto MOP functions don't understand it.
+	obj.Function = jsfn;
 	SetSymbol(obj, '@@receiver', receiver);
 	Define(obj, 'value', 'name', name, false, false, false);
 	Define(obj, 'value', 'arity', arity, false, false, false);
@@ -58,7 +61,7 @@ function FunctionInit(obj, jsfn, name, arity, receiver) {
 function IsCallable(value) {
 	if (!IsObject(value))
 		return false;
-	var F = GetSymbol(value, '@@function');
+	var F = value.Function;
 	return typeof F == 'function';
 }
 
@@ -75,7 +78,7 @@ function Call(f, receiver, args) {
 
 function GetFunction(F) {
 	ExpectFunction(F);
-	return GetSymbol(F, '@@function');
+	return F.Function;
 }
 
 function CallMethod(obj, key, args) {

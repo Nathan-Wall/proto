@@ -1,0 +1,34 @@
+import { describe, it, assert } from '../../lib/util.pr';
+
+describe('Symbols', fn :{
+
+	it('defaults to transferable', fn :{
+
+		sym @foo;
+
+		var a = { @foo: 1 },
+			b = { } := a;
+
+		assert.equal(b.@foo, 1);
+
+	});
+
+	it('can be made non-transferable', fn :{
+
+		sym @foo;
+
+		var a = { },
+			b;
+
+		reflect.define(a, @foo, #{
+			value: 1,
+			transferable: false
+		});
+
+		b = { } := a;
+
+		assert.equal(b.@foo, nil);
+
+	});
+
+});

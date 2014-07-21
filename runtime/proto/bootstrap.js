@@ -72,7 +72,7 @@ var Object = global.Object,
 	MIN_PRECISION = -MAX_PRECISION,
 	MAX_UINT = pow(2, 32) - 1,
 
-	DYNAMIC_THIS = create(null),
+	DYNAMIC_THIS = CreateObject(null),
 
 	// This is being done instead of `CreateObject(null)` to avoid a cycle which
 	// is very difficult to deal with in the builder.
@@ -188,7 +188,7 @@ function proxyJs(value) {
 	p.ProxyJs = true;
 	p.Value = value;
 	if (typeof value == 'function') {
-		SetSymbol(p, $$function, function() {
+		p.Function = function() {
 			var receiver = this,
 				args = create(null);
 			args.length = 0;
@@ -201,7 +201,7 @@ function proxyJs(value) {
 				push(args, arg);
 			}
 			return proxyJs(apply(value, receiver, args));
-		});
+		};
 		SetSymbol(p, $$receiver, DYNAMIC_THIS);
 	}
 	return p;
@@ -217,8 +217,8 @@ function UnwrapProto(value) {
 	// primitive extensions, like symbols, can't be passed out of the system
 	if (value.Primitive)
 		return undefined;
-	if (HasSymbol(value, $$function))
-		return UnproxyProtoFunction(GetSymbol(value, $$function));
+	if ('Function' in value)
+		return UnproxyProtoFunction(value.Function);
 	V = value.Value;
 	res = create(UnwrapProto(getPrototypeOf(value)));
 	ks = getOwnPropertyNames(V);

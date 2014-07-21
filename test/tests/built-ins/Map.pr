@@ -31,4 +31,22 @@ describe('Map', fn :{
 
 	});
 
+	it('doesn\'t get confused by keys being mixed into other objects', fn :{
+
+		var m = new Map(),
+			x = { },
+			y = { };
+
+		m.set(x, 'foo');
+		y := x;
+		assert.equal(m.get(y), nil);
+		m.set(y, 'bar');
+		assert.equal(m.get(y), 'bar');
+		assert.equal(m.get(x), 'foo');
+		x := y;
+		assert.equal(m.get(y), 'bar');
+		assert.equal(m.get(x), 'foo');
+
+	});
+
 });

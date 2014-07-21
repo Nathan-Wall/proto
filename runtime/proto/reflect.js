@@ -33,9 +33,6 @@ var reflect = CreatePrototype({
 	},
 
 	define: function define(obj, key, desc) {
-		// Note: It makes sense for Proto to examine inherited properties in
-		// the descriptors, although it doesn't for JS, because it's trivial to
-		// create dictionaries in Proto.
 		return DefineDescriptor(obj, key, desc);
 	}
 
@@ -60,7 +57,7 @@ function CreateObject(proto, properties, staticProps, extendedProps) {
 		expectObject(properties);
 	wrapper = create(proto);
 	wrapper.Value = like(protoValue, properties);
-	wrapper.Symbols = like(protoSymbols, properties);
+	wrapper.Symbols = like(protoSymbols);
 	if (staticProps !== undefined) {
 		expectObject(staticProps);
 		wrapper.Static = own(staticProps);
@@ -69,7 +66,9 @@ function CreateObject(proto, properties, staticProps, extendedProps) {
 		for (var i = 0, p; i < extendedProps.length; i++) {
 			p = extendedProps[i];
 			if (!p.conditional || p.value != null)
-				Define(wrapper, p.kind, p.key, p.value, p.static, true, true);
+				Define(wrapper, p.kind, p.key, p.value,
+					p.static, true, true, true
+				);
 		}
 	return wrapper;
 }
@@ -240,7 +239,7 @@ function Own(obj) {
 			}
 		}
 		else
-			// TODO: What propreties would this include? Should these actually
+			// TODO: What properties would this include? Should these actually
 			// be copied?
 			define(O, key, getOwnPropertyDescriptor(obj, key));
 	}
@@ -513,31 +512,47 @@ function Delete(obj, key) {
 	return delete O[K];
 }
 
-function GetKeys(obj) {
-	var keys, allKeys, set, key, i, o;
+// `includeSymbols` is used internally by `Mixin`, but this functionality
+// shouldn't be exposed to end users, as symbols are private.
+function GetKeys(obj, includeSymbols, returnSack) {
+	var inheritedContainer = 'Value',
+		staticContainer = 'Static',
+		keys, allKeys, set, key, i, o, K;
 	if (obj === undefined || obj === null || !IsObject(obj))
 		return CreateArray(ArrayProto);
+	if (includeSymbols) {
+		inheritedContainer = 'Symbols';
+		staticContainer = 'StaticSymbols';
+	}
 	allKeys = createSack();
 	set = create(null);
-	if (hasOwn(obj, 'Static')) {
-		keys = getOwnPropertyNames(obj.Static);
+	if (hasOwn(obj, staticContainer)) {
+		keys = getOwnPropertyNames(obj[staticContainer]);
 		for (i = 0; i < keys.length; i++) {
 			key = keys[i];
 			set[key] = true;
-			push(allKeys, key);
+			push(allKeys,
+				includeSymbols ? CreateSymbolPrimitive(key, key) : key
+			);
 		}
 	}
 	o = obj;
 	do {
-		keys = getOwnPropertyNames(o.Value);
+		keys = getOwnPropertyNames(o[inheritedContainer]);
 		for (i = 0; i < keys.length; i++) {
 			key = keys[i];
 			if (!(key in set)) {
 				set[key] = true;
-				push(allKeys, key);
+				push(allKeys,
+					includeSymbols ? CreateSymbolPrimitive(key, key) : key
+				);
 			}
 		}
 	} while (o = getPrototypeOf(o));
+	if (includeSymbols)
+		pushAll(allKeys, GetKeys(obj, false, true));
+	if (returnSack)
+		return allKeys;
 	return CreateArray(ArrayProto, allKeys);
 }
 
@@ -582,17 +597,17 @@ function GetDescriptor(obj, key) {
 	ExpectObject(obj);
 	if (IsWrapper(key) && HasSymbol(key, $$getDescriptor)) {
 		GetDescriptorF = ExpectFunction(GetSymbol(key, $$getDescriptor));
-		return Call(GetDescriptorF, obj);
+		return Call(GetDescriptorF, key, [ obj ]);
 	}
 	key = toSafeKey(key);
 	if (hasOwn(obj, 'Static') && hasOwn(obj.Static, key))
-		return __createDescriptor__(obj.Static, key, true);
+		return __createDescriptor__(obj.Static, key, true, 'ProxyJs' in obj);
 	else if (key in obj.Value)
-		return __createDescriptor__(obj.Value, key, false);
+		return __createDescriptor__(obj.Value, key, false, 'ProxyJs' in obj);
 	return undefined;
 }
 
-function __createDescriptor__(O, key, isStatic) {
+function __createDescriptor__(O, key, isStatic, isProxyJs) {
 	var desc = getPropertyDescriptor(O, key),
 		K = keys(desc),
 		d = create(null);
@@ -603,6 +618,8 @@ function __createDescriptor__(O, key, isStatic) {
 				throw new TypeError('Wrapper function expected');
 			d[k] = desc[k].__ProtoFunction__;
 		}
+		else if (k == 'value' && isProxyJs)
+			d[k] = proxyJs(desc[k]);
 		else if (k != 'enumerable')
 			d[k] = desc[k];
 	}
@@ -748,36 +765,25 @@ function mixin(mixinWhat, mixinWith, withHandler) {
 
 }
 
-// TODO: It'd probably be best to just rewrite this using Proto operations
-// rather than using `mixin` and remove the weird `withHandler` stuff from
-// `mixin`.
 function Mixin(to, from) {
 	ExpectObject(to);
 	// Mixin with nil as the second arg is ignored.
 	if (from === null || from === undefined)
 		return to;
 	ExpectObject(from);
-	// TODO: Deal with JS proxied objects.
-	var toProxy = 'ProxyJs' in to,
-		fromProxy = 'ProxyJs' in from,
-		handler;
-	if (toProxy != fromProxy)
-		handler = toProxy ? UnwrapProto : proxyJs;
-	mixin(to.Value, from.Value, handler);
-	if (hasOwn(from, 'Static')) {
-		if (!hasOwn(to, 'Static'))
-			to.Static = create(null);
-		mixin(to.Static, from.Static);
-	}
-	if (hasOwn(from, 'Symbols')) {
-		if (!hasOwn(to, 'Symbols'))
-			to.Symbols = create(null);
-		mixin(to.Symbols, from.Symbols);
-	}
-	if (hasOwn(from, 'StaticSymbols')) {
-		if (!hasOwn(to, 'StaticSymbols'))
-			to.StaticSymbols = create(null);
-		mixin(to.Staticymbols, from.StaticSymbols);
+	var keys = GetKeys(from, true, true),
+		key, i, toDesc, fromDesc;
+	for (i = 0; i < keys.length; i++) {
+		key = keys[i];
+		fromDesc = GetDescriptor(from, key);
+		toDesc = GetDescriptor(to, key);
+		if (HasOwn(fromDesc, 'transferable') && !Get(fromDesc, 'transferable'))
+			continue;
+		if (!toDesc || Get(toDesc, 'configurable'))
+			DefineDescriptor(to, key, fromDesc);
+		else if (GetOwn(toDesc, 'writable')
+		&& HasOwn(fromDesc, 'value'))
+			Set(toDesc, key, Get(fromDesc, 'value'));
 	}
 	return to;
 }
@@ -787,11 +793,62 @@ function GetPrototype(obj) {
 	return getPrototypeOf(obj);
 }
 
+// Note: It makes sense for Proto to examine inherited properties in the
+// descriptors, although it doesn't for JS, because it's trivial to create
+// dictionaries in Proto.
 function DefineDescriptor(obj, key, desc) {
-	// TODO
+	var isData = Has(desc, 'value'),
+		isSymbol = typeof key != 'string',
+		hasGet, hasSet;
+	if (!isSymbol && Has(desc, 'transferable'))
+		throw new Error(
+			'Descriptor property "transferable" is only allowed for symbol '
+			+ 'keys.'
+		);
+	if (isData) {
+		if (Has(desc, 'get') || Has(desc, 'set'))
+			throw new Error(
+				'Properties "get" and "set" are not allowed in descriptor with '
+				+ '"value" property.'
+			);
+		return Define(obj, 'value', key, Get(desc, 'value'),
+			ToBoolean(Get(desc, 'static')),
+			ToBoolean(Get(desc, 'writable')),
+			ToBoolean(Get(desc, 'configurable')),
+			isSymbol ? ToBoolean(Get(desc, 'transferable')) : undefined
+		);
+	}
+	else {
+		hasGet = hasSet = false;
+		if (Has(desc, 'writable'))
+			throw new Error(
+				'Property "writable" is not allowed in accessor descriptor.'
+			);
+		if (hasGet = Has(desc, 'get'))
+			Define(obj, 'get', key, Get(desc, 'get'),
+				ToBoolean(Get(desc, 'static')),
+				undefined,
+				ToBoolean(Get(desc, 'configurable')),
+				isSymbol ? ToBoolean(Get(desc, 'transferable')) : undefined
+			);
+		if (hasSet = Has(desc, 'set'))
+			Define(obj, 'set', key, Get(desc, 'set'),
+				ToBoolean(Get(desc, 'static')),
+				undefined,
+				ToBoolean(Get(desc, 'configurable')),
+				isSymbol ? ToBoolean(Get(desc, 'transferable')) : undefined
+			);
+		if (!hasGet && !hasSet)
+			throw new Error(
+				'Descriptor must have property "value", "get", or "set".'
+			);
+		return obj;
+	}
 }
 
-function Define(obj, kind, key, value, isStatic, writable, configurable) {
+function Define(
+	obj, kind, key, value, isStatic, writable, configurable, transferable
+) {
 	// TODO: Permit this operation on wrappers?
 	ExpectObject(obj);
 	var O, desc = create(null), d, prop,
@@ -810,8 +867,10 @@ function Define(obj, kind, key, value, isStatic, writable, configurable) {
 	else
 		O = obj.Value;
 	kind = ToString(kind);
-	if (isSymbol)
+	if (isSymbol) {
+		SetSymbolTransferability(obj, key, transferable);
 		key = GetSymbolId(key);
+	}
 	else if (typeof key != 'string')
 		throw new TypeError('Expected string or symbol');
 	key = toSafeKey(key);

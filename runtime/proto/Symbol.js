@@ -66,6 +66,8 @@ function SymbolInit(obj, value, id) {
 		throw new TypeError('Value is not a symbol');
 }
 
+// TODO: If `SymbolProto` is modified, that shouldn't have an affect on
+// internal operations which use symbols.
 function CreateSymbolPrimitive(stringValue, id) {
 	if (typeof stringValue != 'string')
 		throw new Error('String expected');
@@ -88,14 +90,11 @@ function IsSymbol(symbol) {
 function GetSymbolId(symbol) {
 	if (!IsWrapper(symbol)) {
 		// A string version of the symbol may be passed in (note this is only
-		// for internal use).  This helps resolve a circular problem with
-		// `CreatePrototype` being used during runtime init which uses
-		// `CreateFunction` which needs to set the @@function symbol before
-		// the `$$function` variable has been initialized.
+		// for internal use).
 		// TODO: This trick could possibly be done elsewhere for better
 		// performance.
 		// TODO: Make sure this doesn't result in a leak such that people are
-		// able to use strings like `"@@function"` to get access to these
+		// able to use strings like `"@@foo"` to get access to these
 		// private properties. This functionality should only be accessible
 		// internally.
 		if (typeof symbol == 'string' && symbol[0] == '@')
@@ -155,9 +154,26 @@ function GetSymbolDescriptor(obj, symbol) {
 	var id = GetSymbolId(symbol);
 	ExpectObject(obj);
 	if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, id))
-		return __createDescriptor__(obj.StaticSymbols, id, true);
+		return AddTransferableDesc(obj, id,
+			__createDescriptor__(obj.StaticSymbols, id, true)
+		);
 	if (id in obj.Symbols)
-		return __createDescriptor__(obj.Symbols, id, false);
+		return AddTransferableDesc(obj, id,
+			__createDescriptor__(obj.Symbols, id, false)
+		);
+	return undefined;
+}
+
+function GetSymbolDescriptorById(obj, id) {
+	ExpectObject(obj);
+	if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, id))
+		return AddTransferableDesc(obj, id,
+			__createDescriptor__(obj.StaticSymbols, id, true)
+		);
+	if (id in obj.Symbols)
+		return AddTransferableDesc(obj, id,
+			__createDescriptor__(obj.Symbols, id, false)
+		);
 	return undefined;
 }
 
@@ -165,10 +181,39 @@ function GetOwnSymbolDescriptor(obj, symbol) {
 	var id = GetSymbolId(symbol);
 	ExpectObject(obj);
 	if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, id))
-		return __createDescriptor__(obj.StaticSymbols, id, true);
+		return AddTransferableDesc(obj, id,
+			__createDescriptor__(obj.StaticSymbols, id, true)
+		);
 	if (hasOwn(obj.Symbols, id))
-		return __createDescriptor__(obj.Symbols, id, false);
+		return AddTransferableDesc(obj, id,
+			__createDescriptor__(obj.Symbols, id, false)
+		);
 	return undefined;
+}
+
+function AddTransferableDesc(obj, symbolId, desc) {
+	ExpectObject(obj);
+	DefineValue(desc, 'transferable', IsTransferableId(obj, symbolId));
+	return desc;
+}
+
+function IsTransferableId(obj, symbolId) {
+	// Find the right object containing the own symbol id
+	ExpectObject(obj);
+	// Shortcut
+	if (!('NonTransferables' in obj))
+		return true;
+	// Check static symbols
+	if (hasOwn(obj, 'StaticSymbols') && hasOwn(obj.StaticSymbols, symbolId))
+		return hasOwn(obj, 'NonTransferables')
+			&& !obj.NonTransferables[symbolId];
+	// Check inherited symbols
+	do {
+		if (hasOwn(obj.Symbols, symbolId))
+			return hasOwn(obj, 'NonTransferables')
+				&& !obj.NonTransferables[symbolId];
+	} while (obj = GetPrototypeOf(obj));
+	return true;
 }
 
 // TODO: reflect.define should support symbols
@@ -204,4 +249,19 @@ function DeleteSymbol(obj, symbol) {
 	var a = delete obj.StaticSymbols[id],
 		b = delete obj.Symbols[id];
 	return a && b;
+}
+
+function SetSymbolTransferability(obj, symbol, transferable) {
+	// TODO: Only allow this if the property is configurable
+	var id, nonTransferables;
+	ExpectObject(obj);
+	if (hasOwn(obj, 'NonTransferables'))
+		nonTransferables = obj.NonTransferables;
+	else {
+		if (transferable)
+			return;
+		nonTransferables = obj.NonTransferables = create(null);
+	}
+	id = GetSymbolId(symbol);
+	nonTransferables[id] = !transferable;
 }

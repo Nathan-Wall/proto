@@ -9,7 +9,6 @@ var $$get = CreateBuiltInSymbol('get'),
 	$$iterator = CreateBuiltInSymbol('iterator'),
 	$$toComparable = CreateBuiltInSymbol('toComparable'),
 	$$type = CreateBuiltInSymbol('type'),
-	$$function = CreateBuiltInSymbol('function'),
 	$$receiver = CreateBuiltInSymbol('receiver'),
 
 	$$accessorGet = CreateBuiltInSymbol('accessorGet'),
