@@ -12,7 +12,7 @@ describe('Cascade Operator', fn :{
 			q: 99
 		};
 
-		|foo| :{
+		with foo :{
 			.x();
 			.y();
 		}
@@ -32,7 +32,7 @@ describe('Cascade Operator', fn :{
 			q: 99
 		};
 
-		|foo| :{
+		with foo :{
 			.z = 3;
 			.q = 4;
 		}
@@ -52,7 +52,7 @@ describe('Cascade Operator', fn :{
 			q: 99
 		};
 
-		|foo| :{
+		with foo :{
 			.x();
 			.y();
 			.z = 3;
@@ -78,7 +78,7 @@ describe('Cascade Operator', fn :{
 				q: 99
 			};
 
-			var res = |foo| :{
+			var res = with foo :{
 				.x();
 				.z = 3;
 				delete .q;
@@ -103,7 +103,7 @@ describe('Cascade Operator', fn :{
 				q: 99
 			};
 
-			var res = |foo| :{
+			var res = with foo :{
 				.x();
 				.y();
 				delete .q;
@@ -129,7 +129,7 @@ describe('Cascade Operator', fn :{
 				p: 20
 			};
 
-			var res = |foo| :{
+			var res = with foo :{
 				.x();
 				.y();
 				delete .q;
@@ -153,7 +153,7 @@ describe('Cascade Operator', fn :{
 				x: fn :{ test = true; },
 				y: fn :{ test = false; }
 			};
-		:null |bar| :{
+		:null with bar :{
 			.x();
 			break null;
 			.y();

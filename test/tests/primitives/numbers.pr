@@ -11,7 +11,7 @@ describe('Numbers', fn :{
 
 		it('works with leading decimals in a cascade block', fn :{
 			var foo = { a: 1 },
-				x = |foo| :{
+				x = with foo :{
 					.a;
 					.3;
 				};
