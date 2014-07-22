@@ -3,6 +3,31 @@ import { describe, it, assert } from '../../lib/util.pr';
 describe('Destructuring', fn :{
 
 	it(
+		'can rename properties to different variable bindings in variable '
+		& 'declarations',
+		fn :{
+			var foo = { a: 1, b: 2, c: 3 };
+			var { a -> x, b -> y, c } = foo;
+			assert.equal(x, 1);
+			assert.equal(y, 2);
+			assert.equal(c, 3);
+		}
+	);
+
+	it(
+		'can rename properties to different variable bindings in assignment '
+		& 'expressions',
+		fn :{
+			var foo = { a: 1, b: 2, c: 3 };
+			var x, y, c;
+			{ a -> x, b -> y, c } = foo;
+			assert.equal(x, 1);
+			assert.equal(y, 2);
+			assert.equal(c, 3);
+		}
+	);
+
+	it(
 		'calls functions in order when part of a sequence expression which '
 		& 'includes destructuring',
 		fn :{
