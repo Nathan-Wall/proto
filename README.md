@@ -2,7 +2,7 @@
 
 Proto is a programming language that compiles to JavaScript.  It emphasizes *prototypal programming*, *high integrity*, and *fluent, disambiguated syntax*.  It is currently in active development and highly experimental.
 
-Proto compiles to ECMAScript 5.  It uses ECMAScript 6 as a foundation, but deviates significantly -- even replacing the meta-object protocol.  Though Proto is *like* JavaScript, Proto is *not JavaScript*.  Unlike CoffeeScript, Proto is not simply syntactic changes layered into the JavaScript language -- it fundamentally differs in many aspects of the language.
+Proto uses ECMAScript 6 as a foundation, but deviates significantly -- even replacing the meta-object protocol.  Though Proto is *like* JavaScript, Proto is *not JavaScript*.  Unlike CoffeeScript, Proto is not simply syntactic changes layered into the JavaScript language -- it fundamentally differs in many aspects of the language.
 
 ## Documentation
 
